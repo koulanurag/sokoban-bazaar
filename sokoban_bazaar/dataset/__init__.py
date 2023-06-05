@@ -22,7 +22,7 @@ import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from .solver import PDDL, symbolic_state
+from ..solver import PDDL, symbolic_state
 
 
 def get_dataset(env_name, dataset_name):
