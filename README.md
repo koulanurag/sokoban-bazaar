@@ -58,4 +58,5 @@ plan = pddl.search_plan()
 for action in plan:
     _, _, _, info = env.step(action)
 
+print("Success" if info["all_boxes_on_target"] else "Failure")
 ```

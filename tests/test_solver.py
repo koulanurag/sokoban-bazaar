@@ -26,4 +26,4 @@ def test_solver(env_name):
         _, _, _, info = env.step(action)
 
     # verify if solved
-    print(info.keys())
+    assert info["all_boxes_on_target"]
