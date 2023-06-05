@@ -1,10 +1,94 @@
 import gym
 import argparse
 import sokoban_bazaar
-from sokoban_bazaar.dataset import generate_offline_dataset
 from sokoban_bazaar.utils import domain_pddl_path
 import os
 from pathlib import Path
+
+
+def generate_offline_dataset(
+        env,
+        domain_pddl_path,
+        env_observation_mode,
+        dataset_dir, max_episodes=1,
+        episode_start_idx=0,
+):
+    total_step_count = 0
+    done = True
+    episode_count = 0
+
+    # seed env
+    env.action_space.seed(episode_start_idx)
+    env.seed(episode_start_idx)
+
+    with tqdm(total=max_episodes) as pbar:
+        while episode_count < max_episodes:
+
+            # ##########################################################################
+            # Reset episode
+            # ##########################################################################
+            if done:
+                episode_step_i = 0
+                episode_info = defaultdict(lambda: [])
+                env.reset()
+                obs_img = env.render(mode=env_observation_mode)
+                sym_state = symbolic_state(env.render(mode="tiny_rgb_array"))
+                pddl = PDDL(
+                    sym_state,
+                    domain_pddl_path=domain_pddl_path,
+                    problem_name=f"task-{random.randint(0, int(1e+10))}",
+                    domain_name="sokoban",
+                )
+                plan = pddl.search_plan()
+
+            # ##########################################################################
+            # Step into environment
+            # ##########################################################################
+            action = plan.pop(0)  # pop action to be executed
+            _, reward, done, info = env.step(action)
+            next_obs_img = env.render(mode=env_observation_mode)
+            total_step_count += 1
+            episode_step_i += 1
+            pbar.update(1)
+            pbar.set_description(
+                f"Episodes: {episode_count} " f"Steps: {total_step_count}"
+            )
+
+            # Convert image from (height, width, channel)
+            # to (channel, height, width) for network compatibility.
+            # Save rendered images as rendering allows different image modes
+            episode_info["observations"].append(obs_img.transpose(2, 0, 1))
+            episode_info["actions"].append(action)
+            episode_info["rewards"].append(reward)
+            episode_info["dones"].append(done)
+            episode_info["timesteps"].append(episode_step_i)
+
+            # ##########################################################################
+            # Save episode
+            # ##########################################################################
+            if done:
+                # store episode returns-to-go
+                episode_info["returns_to_go"] = []
+                return_to_go = 0
+                for step_reward in episode_info["rewards"][::-1]:
+                    return_to_go += step_reward
+                    episode_info["returns_to_go"].append(return_to_go)
+                episode_info["returns_to_go"] = episode_info["returns_to_go"][::-1]
+
+                # store last observation
+                episode_info["observations"].append(next_obs_img.transpose(2, 0, 1))
+
+                pickle.dump(
+                    dict(episode_info),
+                    open(os.path.join(
+                        dataset_dir,
+                        f"episode_{episode_start_idx + episode_count}.p"),
+                        "wb"
+                    ),
+                )
+                episode_count += 1
+
+            obs_img = next_obs_img
 
 
 def get_args():
@@ -69,16 +153,9 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
 
-    # ##################################################################################
-    # Setup env
-    # ##################################################################################
     env = gym.make(args.env_name)
-
-    # ##################################################################################
-    # Job: Generate Offline Data
-    # ##################################################################################
     dataset_dir = os.path.join(Path.home(), ".sokoban-datasets", args.env_name,
-                                 args.env_observation_mode, args.dataset_quality)
+                               args.env_observation_mode, args.dataset_quality)
     os.makedirs(dataset_dir, exist_ok=True)
     generate_offline_dataset(
         env,
@@ -90,4 +167,4 @@ if __name__ == '__main__':
     )
 
     # log to file
-    print(f"Data generated and stored at {args.env_dataset_dir}")
+    print(f"Data generated and stored at {env_dataset_dir}")
