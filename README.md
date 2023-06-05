@@ -34,6 +34,10 @@ for batch in episode_dataloader:
 2. Solver
 
 ```python
+import gym
+import random
+from sokoban_bazaar.solver import PDDL, symbolic_state
+from sokoban_bazaar.utils import domain_pddl_path
 
 # create env
 env_name = "gym_sokoban:Sokoban-v2"
