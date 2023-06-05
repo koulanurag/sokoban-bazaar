@@ -1,3 +1,5 @@
+from pathlib import Path
+
 _ENV_NAMES = ["gym_sokoban:Sokoban-small-v0",
               "gym_sokoban:Sokoban-small-v1",
               "gym_sokoban:Sokoban-v2",
@@ -24,15 +26,18 @@ from .solver import PDDL, symbolic_state
 
 
 def get_dataset(env_name, dataset_name):
-    if env_name in _ENV_NAMES:
+    if env_name not in _ENV_NAMES:
         raise ValueError()
-    if dataset_name in _DATASET_NAMES:
+    if dataset_name not in _DATASET_NAMES:
         raise ValueError()
 
     root_dir = os.environ.get('SOKOBAN_DATASET_ROOT_PATH',
-                              default="~/.sokoban-datasets")
+                              default=os.path.join(Path.home(), ".sokoban-datasets"))
     if dataset_name == 'expert':
-        episode_file_paths = os.listdir(os.path.join(root_dir, env_name, dataset_name))
+        dataset_dir = os.path.join(root_dir, env_name, 'tiny_rgb_array',
+                                   dataset_name)
+        episode_file_paths = [os.path.join(dataset_dir, file)
+                              for file in os.listdir(dataset_dir)]
     else:
         raise ValueError()
 
@@ -64,9 +69,7 @@ class EpisodeDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        episode = pickle.load(
-            open(os.path.join(self.dataset_dir_path, self.episode_files[idx]), "rb")
-        )
+        episode = pickle.load(open(os.path.join(self.episode_files[idx]), "rb"))
 
         observations = np.array(episode["observations"])
         actions = np.append(episode["actions"], episode["actions"][-1])

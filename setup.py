@@ -21,13 +21,6 @@ setup(name='sokoban_bazaar',
       license='MIT License',
       packages=setuptools.find_packages(),
       install_requires=[
-          'scipy>=1.3.0',
-          'numpy>=1.16.4',
-          'pyglet>=1.4.0,<=1.5.27',
-          'cloudpickle==2.0.0',
-          'gym>=0.19.0,<=0.20.0',
-          'pillow>=7.2.0',
-          'six>=1.16.0'
       ],
       extras_require=extras,
       tests_require=extras['test'],
