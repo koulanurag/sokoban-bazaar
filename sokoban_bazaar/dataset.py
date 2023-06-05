@@ -1,5 +1,14 @@
-__ENV_NAMES = []
-__DATASET_NAMES = []
+_ENV_NAMES = ["gym_sokoban:Sokoban-small-v0",
+              "gym_sokoban:Sokoban-small-v1",
+              "gym_sokoban:Sokoban-v2",
+              "Sokoban5x5-v0",
+              "gym_sokoban:Sokoban-large-v0",
+              "gym_sokoban:Sokoban-large-v1"]
+_DATASET_NAMES = ['random',
+                  'expert',
+                  'medium',
+                  'medium-expert',
+                  'expert-random']
 
 import os
 import pickle
@@ -15,13 +24,18 @@ from .solver import PDDL, symbolic_state
 
 
 def get_dataset(env_name, dataset_name):
-    if env_name in __ENV_NAMES:
+    if env_name in _ENV_NAMES:
         raise ValueError()
-    if dataset_name in __DATASET_NAMES:
+    if dataset_name in _DATASET_NAMES:
         raise ValueError()
 
-    _path = None
-    episode_file_paths = os.listdir(_path)
+    root_dir = os.environ.get('SOKOBAN_DATASET_ROOT_PATH',
+                              default="~/.sokoban-datasets")
+    if dataset_name == 'expert':
+        episode_file_paths = os.listdir(os.path.join(root_dir, env_name, dataset_name))
+    else:
+        raise ValueError()
+
     return EpisodeDataset(episode_file_paths)
 
 
@@ -40,9 +54,8 @@ def pad_batch(batch):
 class EpisodeDataset(Dataset):
     """Episode dataset."""
 
-    def __init__(self, dataset_dir_path):
-        self.dataset_dir_path = dataset_dir_path
-        self.episode_files = os.listdir(self.dataset_dir_path)
+    def __init__(self, episode_file_paths):
+        self.episode_files = episode_file_paths
 
     def __len__(self):
         return len(self.episode_files)
