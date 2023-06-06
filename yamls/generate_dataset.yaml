@@ -1,0 +1,67 @@
+description: Generate Sokoban Episodic Dataset
+target:
+  service: sing
+  name: msrresrchvc
+
+environment:
+  image: amlt-sing/pytorch-1.10.0-cuda11.4-a100
+  image_setup:
+    - pip3 install wandb --upgrade
+    - pip3 install pyglet --upgrade
+    - pip install 'setuptools<=66'
+    - pip3 install gym==0.21.0
+    - pip3 install gym-sokoban
+    - pip3 install pyperplan
+    - pip3 install transformers
+  setup:
+    - pip3 install scikit-learn --upgrade
+
+storage:
+  dt_sokoban:
+    storage_account_name: anuragkoul
+    container_name: dt-sokoban
+    is_output: true
+
+code:
+  local_dir: $CONFIG_DIR/..
+
+search:
+  job_template:
+    name: dt_sokoban_{experiment_name:s}_{auto:3s}
+    sku: 2C2
+    sla_tier: premium  # [basic, standard, premium]
+    execution_mode: basic  # [basic, managed]
+    priority: high  # [low, medium, high]
+    submit_args:
+      env:
+        { WANDB_API_KEY: $WANDB_API_KEY }
+    command:
+      - cd scripts
+      - python generate_offline_data.py
+        --dataset-dir /mnt/dt_sokoban/datasets/
+        --dataset-quality {dataset_quality}
+        --env {env}
+        --env-observation-mode tiny_rgb_array
+        --max-episodes 1
+        --episode-start-idx {episode_start_idx}
+        --no-cuda
+  type: grid
+  max_trials: 10001
+  params:
+    - name: env
+      spec: discrete
+      values: [
+        "Sokoban5x5-v0",
+        "gym_sokoban:Sokoban-v2",
+        "gym_sokoban:Sokoban-small-v1",
+        "gym_sokoban:Sokoban-large-v0",
+        "gym_sokoban:Sokoban-large-v1"
+      ]
+
+    - name: episode_start_idx
+      spec: discrete
+      values: range(0,2500)
+
+    - name: dataset-quality
+      spec: discrete
+      values: [ 'random','expert' ]
