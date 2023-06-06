@@ -10,6 +10,7 @@ from sokoban_bazaar.solver import PDDL, symbolic_state
 import random
 import pickle
 
+
 def generate_offline_dataset(
         env,
         domain_pddl_path,
@@ -38,14 +39,18 @@ def generate_offline_dataset(
                 episode_info = defaultdict(lambda: [])
                 env.reset()
                 obs_img = env.render(mode=env_observation_mode)
-                sym_state = symbolic_state(env.render(mode="tiny_rgb_array"))
-                pddl = PDDL(
-                    sym_state,
-                    domain_pddl_path=domain_pddl_path,
-                    problem_name=f"task-{random.randint(0, int(1e+10))}",
-                    domain_name="sokoban",
-                )
-                plan = pddl.search_plan()
+
+                if dataset_quality != "random":
+                    sym_state = symbolic_state(env.render(mode="tiny_rgb_array"))
+                    pddl = PDDL(
+                        sym_state,
+                        domain_pddl_path=domain_pddl_path,
+                        problem_name=f"task-{random.randint(0, int(1e+10))}",
+                        domain_name="sokoban",
+                    )
+                    plan = pddl.search_plan()
+                else:
+                    plan = None
 
             # ##########################################################################
             # Step into environment
@@ -154,6 +159,10 @@ def get_args():
         default="expert",
         type=str,
         help="max number steps for data collection",
+        choices=[
+            "expert",
+            "random"
+        ],
     )
     data_generation_args.add_argument(
         "--episode-start-idx",

@@ -44,6 +44,16 @@ def get_dataset(env_name, dataset_name):
     return EpisodeDataset(episode_file_paths)
 
 
+def get_test_envs(env_name, dataset_name):
+    if env_name not in _ENV_NAMES:
+        raise ValueError()
+    if dataset_name not in _DATASET_NAMES:
+        raise ValueError()
+
+    envs = [pickle.load(_path) for _path in test_env_paths]
+    return envs
+
+
 def pad_batch(batch):
     # Sort the batch in descending order of sequence length
     batch = sorted(batch, key=lambda x: len(x["observations"]), reverse=True)

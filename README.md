@@ -32,9 +32,10 @@ for batch in episode_dataloader:
 
 ```
 
-2. Test Envs
-
+2. Test Environments
 ```python
+from sokoban_bazaar.dataset import get_test_envs
+
 test_envs = get_test_envs(env_name="gym_sokoban:Sokoban-v2", dataset_name="expert")
 
 for env in test_envs:
