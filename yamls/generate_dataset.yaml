@@ -36,15 +36,16 @@ search:
       env:
         { WANDB_API_KEY: $WANDB_API_KEY }
     command:
+      - pip install -e .
       - cd scripts
-      - python generate_offline_data.py
+      - python generate_dataset.py
         --dataset-dir /mnt/dt_sokoban/datasets/
         --dataset-quality {dataset_quality}
-        --env {env}
+        --env-name {env}
         --env-observation-mode tiny_rgb_array
         --max-episodes 1
         --episode-start-idx {episode_start_idx}
-        --no-cuda
+        --dataset-quality {dataset_quality}
   type: grid
   max_trials: 10001
   params:
@@ -52,16 +53,16 @@ search:
       spec: discrete
       values: [
         "Sokoban5x5-v0",
-        "gym_sokoban:Sokoban-v2",
-        "gym_sokoban:Sokoban-small-v1",
-        "gym_sokoban:Sokoban-large-v0",
-        "gym_sokoban:Sokoban-large-v1"
+#        "gym_sokoban:Sokoban-v2",
+#        "gym_sokoban:Sokoban-small-v1",
+#        "gym_sokoban:Sokoban-large-v0",
+#        "gym_sokoban:Sokoban-large-v1"
       ]
 
     - name: episode_start_idx
       spec: discrete
-      values: range(0,2500)
+      values: range(29615,29616)
 
-    - name: dataset-quality
+    - name: dataset_quality
       spec: discrete
-      values: [ 'random','expert' ]
+      values: [ 'expert']

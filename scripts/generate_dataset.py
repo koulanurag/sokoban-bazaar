@@ -9,6 +9,7 @@ from pathlib import Path
 def generate_offline_dataset(
         env,
         domain_pddl_path,
+        dataset_quality,
         env_observation_mode,
         dataset_dir, max_episodes=1,
         episode_start_idx=0,
@@ -44,15 +45,17 @@ def generate_offline_dataset(
             # ##########################################################################
             # Step into environment
             # ##########################################################################
-            action = plan.pop(0)  # pop action to be executed
+            if dataset_quality == 'expert':
+                action = plan.pop(0)  # pop action to be executed
+            elif dataset_quality == 'random':
+                action = env.action_space.sample()
+            else:
+                raise ValueError()
+            
             _, reward, done, info = env.step(action)
             next_obs_img = env.render(mode=env_observation_mode)
             total_step_count += 1
             episode_step_i += 1
-            pbar.update(1)
-            pbar.set_description(
-                f"Episodes: {episode_count} " f"Steps: {total_step_count}"
-            )
 
             # Convert image from (height, width, channel)
             # to (channel, height, width) for network compatibility.
@@ -88,6 +91,12 @@ def generate_offline_dataset(
                 )
                 episode_count += 1
 
+                # update progress bar
+                pbar.update(1)
+                pbar.set_description(
+                    f"Episodes: {episode_count} " f"Steps: {total_step_count}"
+                )
+
             obs_img = next_obs_img
 
 
@@ -100,11 +109,15 @@ def get_args():
         choices=["train", "eval", "generate-offline-data"],
         help="job to be performed",
     )
+    parser.add_argument(
+        "--dataset-dir",
+        default=os.path.join(Path.home(), ".sokoban-datasets")
+    )
 
     # env-args
     env_args = parser.add_argument_group("data generation args")
     env_args.add_argument(
-        "--env_name",
+        "--env-name",
         default="gym_sokoban:Sokoban-small-v0",
         choices=[
             "gym_sokoban:Sokoban-small-v0",
@@ -154,13 +167,14 @@ if __name__ == '__main__':
     args = get_args()
 
     env = gym.make(args.env_name)
-    dataset_dir = os.path.join(Path.home(), ".sokoban-datasets", args.env_name,
+    dataset_dir = os.path.join(args.dataset_dir, args.env_name,
                                args.env_observation_mode, args.dataset_quality)
     os.makedirs(dataset_dir, exist_ok=True)
     generate_offline_dataset(
         env,
         domain_pddl_path(args.env_name),
         args.env_observation_mode,
+        dataset_quality=args.dataset_quality,
         dataset_dir=dataset_dir,
         max_episodes=args.max_episodes,
         episode_start_idx=args.episode_start_idx
