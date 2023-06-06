@@ -11,7 +11,8 @@ def generate_offline_dataset(
         domain_pddl_path,
         dataset_quality,
         env_observation_mode,
-        dataset_dir, max_episodes=1,
+        dataset_dir,
+        max_episodes=1,
         episode_start_idx=0,
 ):
     total_step_count = 0
@@ -51,7 +52,7 @@ def generate_offline_dataset(
                 action = env.action_space.sample()
             else:
                 raise ValueError()
-            
+
             _, reward, done, info = env.step(action)
             next_obs_img = env.render(mode=env_observation_mode)
             total_step_count += 1
@@ -171,10 +172,10 @@ if __name__ == '__main__':
                                args.env_observation_mode, args.dataset_quality)
     os.makedirs(dataset_dir, exist_ok=True)
     generate_offline_dataset(
-        env,
-        domain_pddl_path(args.env_name),
-        args.env_observation_mode,
+        env=env,
+        domain_pddl_path=domain_pddl_path(args.env_name),
         dataset_quality=args.dataset_quality,
+        env_observation_mode=args.env_observation_mode,
         dataset_dir=dataset_dir,
         max_episodes=args.max_episodes,
         episode_start_idx=args.episode_start_idx

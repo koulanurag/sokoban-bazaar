@@ -45,7 +45,6 @@ search:
         --env-observation-mode tiny_rgb_array
         --max-episodes 1
         --episode-start-idx {episode_start_idx}
-        --dataset-quality {dataset_quality}
   type: grid
   max_trials: 10001
   params:
