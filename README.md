@@ -12,7 +12,8 @@ A bazaar of sokokan datasets and solver
 
 # Usage
 
-1. Datasets
+1. Train Datasets
+
 ```python
 from torch.utils.data import DataLoader
 from sokoban_bazaar.dataset import get_dataset, pad_batch
@@ -28,8 +29,11 @@ episode_dataloader = DataLoader(
 
 for batch in episode_dataloader:
     pass
+
 ```
-2. Testing
+
+2. Test Envs
+
 ```python
 test_envs = get_test_envs(env_name="gym_sokoban:Sokoban-v2", dataset_name="expert")
 
@@ -43,6 +47,7 @@ for env in test_envs:
 
     print(f"Episode Score: {episode_score}| {'Success' if info['all_boxes_on_target'] else 'Failure'}")
 ```
+
 3. Solver
 
 ```python

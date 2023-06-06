@@ -4,7 +4,11 @@ import sokoban_bazaar
 from sokoban_bazaar.utils import domain_pddl_path
 import os
 from pathlib import Path
-
+from tqdm import tqdm
+from collections import defaultdict
+from sokoban_bazaar.solver import PDDL, symbolic_state
+import random
+import pickle
 
 def generate_offline_dataset(
         env,
@@ -164,7 +168,7 @@ def get_args():
     return args
 
 
-if __name__ == '__main__':
+def __main():
     args = get_args()
 
     env = gym.make(args.env_name)
@@ -182,4 +186,8 @@ if __name__ == '__main__':
     )
 
     # log to file
-    print(f"Data generated and stored at {env_dataset_dir}")
+    print(f"Data generated and stored at {dataset_dir}")
+
+
+if __name__ == '__main__':
+    __main()
