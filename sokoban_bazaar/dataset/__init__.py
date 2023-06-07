@@ -25,7 +25,7 @@ from tqdm import tqdm
 from ..solver import PDDL, symbolic_state
 
 
-def get_dataset(env_name, dataset_name):
+def get_dataset(env_name, dataset_name, dataset_size=None):
     if env_name not in _ENV_NAMES:
         raise ValueError()
     if dataset_name not in _DATASET_NAMES:
@@ -40,8 +40,14 @@ def get_dataset(env_name, dataset_name):
             dataset_dir = os.path.join(root_dir, env_name, 'tiny_rgb_array',
                                        sub_dataset_name)
             dataset_files = os.listdir(dataset_dir)
+
+            if dataset_size is None:
+                sub_dataset_size = len(dataset_files) // len(sub_dataset_names)
+            else:
+                sub_dataset_size = dataset_size // len(sub_dataset_names)
+
             episode_file_paths += [os.path.join(dataset_dir, file)
-                                   for file in dataset_files[:len(dataset_files) // len(sub_dataset_names)]]
+                                   for file in dataset_files[:sub_dataset_size]]
     else:
         raise ValueError()
 
