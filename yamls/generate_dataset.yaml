@@ -52,10 +52,10 @@ search:
       spec: discrete
       values: [
         "Sokoban5x5-v0",
-#        "gym_sokoban:Sokoban-v2",
+        "gym_sokoban:Sokoban-v2",
         "gym_sokoban:Sokoban-small-v1",
-#        "gym_sokoban:Sokoban-large-v0",
-#        "gym_sokoban:Sokoban-large-v1"
+        "gym_sokoban:Sokoban-large-v0",
+        "gym_sokoban:Sokoban-large-v1"
       ]
 
     - name: episode_start_idx

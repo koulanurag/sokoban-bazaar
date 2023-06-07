@@ -3,10 +3,10 @@ from markdownTable import markdownTable
 import pandas as pd
 
 
-def generate_dataset_stats(format="markdown"):
+def generate_dataset_stats():
     df = pd.DataFrame(columns=['env_name', 'dataset_name', 'episodes'])
     for env_name in _ENV_NAMES:
-        for dataset_name in ["expert"]:
+        for dataset_name in ["expert", "random", "expert-random"]:
             try:
                 new_row = pd.Series({
                     'env_name': env_name,
@@ -21,5 +21,5 @@ def generate_dataset_stats(format="markdown"):
 
 
 if __name__ == '__main__':
-    mark_down = generate_dataset_stats()
-    print(mark_down)
+    stats_df = generate_dataset_stats()
+    print(stats_df)

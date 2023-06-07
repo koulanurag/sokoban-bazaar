@@ -33,11 +33,15 @@ def get_dataset(env_name, dataset_name):
 
     root_dir = os.environ.get('SOKOBAN_DATASET_ROOT_PATH',
                               default=os.path.join(Path.home(), ".sokoban-datasets"))
-    if dataset_name == 'expert':
-        dataset_dir = os.path.join(root_dir, env_name, 'tiny_rgb_array',
-                                   dataset_name)
-        episode_file_paths = [os.path.join(dataset_dir, file)
-                              for file in os.listdir(dataset_dir)]
+    if dataset_name in ['expert', 'random', 'expert-random']:
+        episode_file_paths = []
+        sub_dataset_names = dataset_name.split("-")
+        for sub_dataset_name in sub_dataset_names:
+            dataset_dir = os.path.join(root_dir, env_name, 'tiny_rgb_array',
+                                       sub_dataset_name)
+            dataset_files = os.listdir(dataset_dir)
+            episode_file_paths += [os.path.join(dataset_dir, file)
+                                   for file in dataset_files[:len(dataset_files) // len(sub_dataset_names)]]
     else:
         raise ValueError()
 

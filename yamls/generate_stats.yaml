@@ -1,0 +1,38 @@
+description: Generate Stats of Sokoban Dataset
+target:
+  service: sing
+  name: msrresrchvc
+
+environment:
+  image: amlt-sing/pytorch-1.10.0-cuda11.4-a100
+  image_setup:
+    - pip3 install wandb --upgrade
+    - pip3 install pyglet --upgrade
+    - pip install 'setuptools<=66'
+    - pip3 install gym==0.21.0
+    - pip3 install gym-sokoban
+    - pip3 install pyperplan
+    - pip3 install transformers
+  setup:
+    - pip3 install scikit-learn --upgrade
+
+storage:
+  dt_sokoban:
+    storage_account_name: anuragkoul
+    container_name: dt-sokoban
+    is_output: true
+
+code:
+  local_dir: $CONFIG_DIR/..
+
+jobs:
+  - name: sokoban_dataset_stats
+    sku: 1C2
+    submit_args:
+      env:
+        { SOKOBAN_DATASET_ROOT_PATH: "/mnt/dt_sokoban/datasets/" }
+    command:
+      - pip install -e .
+      - pip install -e ".[scripts]"
+      - cd scripts
+      - python generate_stats.py
