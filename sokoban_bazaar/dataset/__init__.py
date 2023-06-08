@@ -14,15 +14,10 @@ _DATASET_NAMES = ['random',
 
 import os
 import pickle
-import random
-from collections import defaultdict
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from tqdm import tqdm
-
-from ..solver import PDDL, symbolic_state
 
 
 def get_dataset(env_name, dataset_name, dataset_size=None):
