@@ -43,7 +43,7 @@ search:
         --dataset-quality {dataset_quality}
         --env-name {env}
         --env-observation-mode tiny_rgb_array
-        --max-episodes 1000
+        --max-episodes 100
         --episode-start-idx {episode_start_idx}
   type: grid
   max_trials: 25001
@@ -51,17 +51,17 @@ search:
     - name: env
       spec: discrete
       values: [
-        "Sokoban5x5-v0",
+#        "Sokoban5x5-v0",
         "gym_sokoban:Sokoban-v2",
-        "gym_sokoban:Sokoban-small-v1",
-        "gym_sokoban:Sokoban-large-v0",
-        "gym_sokoban:Sokoban-large-v1"
+#        "gym_sokoban:Sokoban-small-v1",
+#        "gym_sokoban:Sokoban-large-v0",
+#        "gym_sokoban:Sokoban-large-v1"
       ]
 
     - name: episode_start_idx
       spec: discrete
-      values: range(0,50000,1000)
+      values: range(0,50000,100)
 
     - name: dataset_quality
       spec: discrete
-      values: [ 'random']
+      values: [ 'expert']
