@@ -81,3 +81,12 @@ for action in plan:
 
 print("Success" if info["all_boxes_on_target"] else "Failure")
 ```
+
+## Testing:
+
+- Install: ```pip install -e ".[test]" ```
+- Run: ```pytest```
+
+## Contact
+
+If you have any questions or suggestions , you can contact me at koulanurag@gmail.com or open an issue on this GitHub repository.
