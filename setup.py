@@ -5,7 +5,8 @@ from setuptools import setup
 
 extras = {
     'test': ['pytest', 'pytest_cases'],
-    'scripts': ['pandas', 'py-markdown-table']
+    'scripts': ['pandas', 'py-markdown-table'],
+    'docs': ['sphinx']
 }
 
 # Meta dependency groups.

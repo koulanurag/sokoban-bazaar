@@ -10,7 +10,7 @@ import random
 def test_solver(env_name):
     env = gym.make(env_name)
     env.reset()
-    sym_state = symbolic_state(env.render(mode="tiny_rgb_array"))
+    sym_state, _ = symbolic_state(env.render(mode="tiny_rgb_array"))
 
     # generate plan
     pddl = PDDL(

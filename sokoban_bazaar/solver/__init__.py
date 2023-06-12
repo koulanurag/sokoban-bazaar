@@ -12,6 +12,17 @@ def symbolic_state(obs):
     height, width, channels = obs.shape
     _symbolic_obs = [[None for _ in range(width)] for _ in range(height)]
 
+    # Room fixed: represents all not movable parts of the room
+    # Room structure: represents the current state of the room including movable parts
+    info = {'room_fixed': np.zeros(shape=(height, width), dtype=int),
+            'room_state': np.zeros(shape=(height, width), dtype=int),
+            'box_mapping': dict()}
+    _object_name_to_idx = {'wall': 0,
+                           'floor': 1,
+                           'box_target': 2,
+                           'box_off_target': 3,
+                           'box_on_target': 4,
+                           'player_off_target': 5}
     for row_i in range(height):
         for col_i in range(width):
             _object_color = tuple(obs[row_i, col_i, :])
@@ -34,8 +45,20 @@ def symbolic_state(obs):
                 raise ValueError("only 'tiny_rgb_array' are supported")
 
             _symbolic_obs[row_i][col_i] = _object_name
+            info['box_mapping'][(row_i, col_i)] = (row_i, col_i)
 
-    return np.array(_symbolic_obs)
+            info['room_fixed'][row_i][col_i] = _object_name_to_idx[_object_name]
+            if _object_name in ['player_off_target',
+                                'player_on_target',
+                                'box_off_target',
+                                'box_on_target']:
+                info['room_fixed'][row_i][col_i] = _object_name_to_idx['floor']
+
+            info['room_state'][row_i][col_i] = _object_name_to_idx[_object_name]
+            if _object_name in ['box_off_target']:
+                info['room_state'][row_i][col_i] = _object_name_to_idx['box_on_target']
+
+    return np.array(_symbolic_obs), info
 
 
 class PDDL:
