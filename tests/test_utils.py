@@ -1,11 +1,12 @@
 import pytest
-from sokoban_bazaar.solver import symbolic_state
 from sokoban_bazaar.utils import set_state
 import gym
-import numpy as np
 
 
-@pytest.mark.parametrize('env_name', ["gym_sokoban:Sokoban-small-v0"])
+@pytest.mark.parametrize('env_name', ["gym_sokoban:Sokoban-small-v0",
+                                      "gym_sokoban:Sokoban-small-v1",
+                                      "Sokoban5x5-v0",
+                                      "gym_sokoban:Sokoban-v2"])
 def test_set_state(env_name):
     env = gym.make(env_name)
     eval_env = gym.make(env_name)
