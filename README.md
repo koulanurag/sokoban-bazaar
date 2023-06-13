@@ -16,15 +16,15 @@ A bazaar of sokokan datasets and solver
 
 ```python
 from torch.utils.data import DataLoader
-from sokoban_bazaar.dataset import get_dataset, pad_batch
+from sokoban_bazaar.dataset import get_dataset, pad_episodic_batch
 
-episode_dataset = get_dataset(env_name="gym_sokoban:Sokoban-v2", dataset_name="expert")
+episode_dataset, weighted_sampler = get_dataset(env_name="gym_sokoban:Sokoban-v2", dataset_name="expert")
 episode_dataloader = DataLoader(
     episode_dataset,
     batch_size=256,
-    shuffle=True,
     num_workers=0,
-    collate_fn=pad_batch,
+    sampler=weighted_sampler,
+    collate_fn=pad_episodic_batch
 )
 
 for batch in episode_dataloader:

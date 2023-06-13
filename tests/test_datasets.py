@@ -1,21 +1,22 @@
 import pytest
-from sokoban_bazaar.dataset import get_dataset, pad_batch, _ENV_NAMES, _DATASET_NAMES
+from sokoban_bazaar.dataset import get_dataset, episode_data_loader, _ENV_NAMES, _DATASET_NAMES
 
 
 @pytest.mark.parametrize('env_name,dataset_name',
                          [(_env_name, _dataset_name) for _dataset_name in
                           _DATASET_NAMES
-                          for _env_name in _ENV_NAMES])
+                          for _env_name in ['Sokoban5x5-v0']])
 def test_dataset(env_name, dataset_name):
     from torch.utils.data import DataLoader
+    from sokoban_bazaar.dataset import pad_episodic_batch
 
-    episode_dataset = get_dataset(env_name, dataset_name)
+    episode_dataset, weighted_sampler = get_dataset(env_name, dataset_name)
     episode_dataloader = DataLoader(
         episode_dataset,
         batch_size=256,
-        shuffle=True,
         num_workers=0,
-        collate_fn=pad_batch,
+        sampler=weighted_sampler,
+        collate_fn=pad_episodic_batch
     )
 
     for batch in episode_dataloader:

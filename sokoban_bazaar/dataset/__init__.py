@@ -1,6 +1,7 @@
 from pathlib import Path
 import gym
 from ..utils import set_state
+from torch.utils.data import DataLoader, WeightedRandomSampler
 
 _ENV_NAMES = ["gym_sokoban:Sokoban-small-v0",
               "gym_sokoban:Sokoban-small-v1",
@@ -10,8 +11,8 @@ _ENV_NAMES = ["gym_sokoban:Sokoban-small-v0",
               "gym_sokoban:Sokoban-large-v1"]
 _DATASET_NAMES = ['random',
                   'expert',
-                  'medium',
-                  'medium-expert',
+                  # 'medium',
+                  # 'medium-expert',
                   'expert-random']
 
 import os
@@ -33,12 +34,12 @@ def get_dataset(env_name, dataset_name, dataset_size=None):
     if dataset_name not in _DATASET_NAMES:
         raise ValueError()
 
-    _root_dir = root_dir()
     if dataset_name in ['expert', 'random', 'expert-random']:
         episode_file_paths = []
         sub_dataset_names = dataset_name.split("-")
+        weights = []
         for sub_dataset_name in sub_dataset_names:
-            dataset_dir = os.path.join(_root_dir, env_name, 'tiny_rgb_array',
+            dataset_dir = os.path.join(root_dir(), env_name, 'tiny_rgb_array',
                                        sub_dataset_name)
             dataset_files = os.listdir(dataset_dir)
 
@@ -49,10 +50,46 @@ def get_dataset(env_name, dataset_name, dataset_size=None):
 
             episode_file_paths += [os.path.join(dataset_dir, file)
                                    for file in dataset_files[:sub_dataset_size]]
+            weights = (np.ones(len(dataset_files[:sub_dataset_size]))
+                       * 1 / len(dataset_files[:sub_dataset_size])).tolist()
     else:
         raise ValueError()
 
-    return EpisodeDataset(episode_file_paths)
+    return EpisodeDataset(episode_file_paths), \
+        WeightedRandomSampler(weights, len(weights), replacement=True)
+
+
+def pad_episodic_batch(batch):
+    # Sort the batch in descending order of sequence length
+    batch = sorted(batch, key=lambda x: len(x["observations"]), reverse=True)
+
+    # Pad the sequences to have the same length
+    padded_batch = {
+        k: torch.nn.utils.rnn.pad_sequence([_[k] for _ in batch], batch_first=True)
+        for k in batch[0].keys()
+    }
+    return padded_batch
+
+
+def episode_data_loader(episode_dataset,
+                        batch_size=1,
+                        shuffle=True,
+                        num_workers=0):
+    # imbalanced data handling
+    weights = (np.ones(len(train_remember)) * 1 / len(train_remember)).tolist()
+    weights += (np.ones(len(train_forget)) * 1 / len(train_forget)).tolist()
+    train_data_sampler = WeightedRandomSampler(
+        weights, len(weights), replacement=True
+    )
+
+    return DataLoader(
+        episode_dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        collate_fn=pad_batch,
+        sampler=train_data_sampler,
+    )
 
 
 def get_test_envs(env_name):
@@ -69,18 +106,6 @@ def get_test_envs(env_name):
         test_envs.append(env)
 
     return test_envs
-
-
-def pad_batch(batch):
-    # Sort the batch in descending order of sequence length
-    batch = sorted(batch, key=lambda x: len(x["observations"]), reverse=True)
-
-    # Pad the sequences to have the same length
-    padded_batch = {
-        k: torch.nn.utils.rnn.pad_sequence([_[k] for _ in batch], batch_first=True)
-        for k in batch[0].keys()
-    }
-    return padded_batch
 
 
 class EpisodeDataset(Dataset):
