@@ -1,4 +1,6 @@
 from pathlib import Path
+import gym
+from ..utils import set_state
 
 _ENV_NAMES = ["gym_sokoban:Sokoban-small-v0",
               "gym_sokoban:Sokoban-small-v1",
@@ -20,19 +22,23 @@ import torch
 from torch.utils.data import Dataset
 
 
+def root_dir():
+    return os.environ.get('SOKOBAN_DATASET_ROOT_PATH',
+                          default=os.path.join(Path.home(), ".sokoban-datasets"))
+
+
 def get_dataset(env_name, dataset_name, dataset_size=None):
     if env_name not in _ENV_NAMES:
         raise ValueError()
     if dataset_name not in _DATASET_NAMES:
         raise ValueError()
 
-    root_dir = os.environ.get('SOKOBAN_DATASET_ROOT_PATH',
-                              default=os.path.join(Path.home(), ".sokoban-datasets"))
+    _root_dir = root_dir()
     if dataset_name in ['expert', 'random', 'expert-random']:
         episode_file_paths = []
         sub_dataset_names = dataset_name.split("-")
         for sub_dataset_name in sub_dataset_names:
-            dataset_dir = os.path.join(root_dir, env_name, 'tiny_rgb_array',
+            dataset_dir = os.path.join(_root_dir, env_name, 'tiny_rgb_array',
                                        sub_dataset_name)
             dataset_files = os.listdir(dataset_dir)
 
@@ -49,14 +55,20 @@ def get_dataset(env_name, dataset_name, dataset_size=None):
     return EpisodeDataset(episode_file_paths)
 
 
-def get_test_envs(env_name, dataset_name):
+def get_test_envs(env_name):
     if env_name not in _ENV_NAMES:
         raise ValueError()
-    if dataset_name not in _DATASET_NAMES:
-        raise ValueError()
 
-    envs = [pickle.load(_path) for _path in test_env_paths]
-    return envs
+    with open(os.path.join(root_dir(), env_name, 'test_states.p'), 'rb') as test_files:
+        test_states = pickle.load(test_files)
+
+    test_envs = []
+    for _, test_state_info in test_states.items():
+        env = gym.make(env_name)
+        set_state(env, test_state_info['tiny_rgb_array'])
+        test_envs.append(env)
+
+    return test_envs
 
 
 def pad_batch(batch):

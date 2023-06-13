@@ -9,9 +9,11 @@ from tqdm import tqdm
 
 
 def generate_dataset_stats():
-    df = pd.DataFrame(columns=[])
+    train_df = pd.DataFrame(columns=[])
+    eval_df = pd.DataFrame(columns=[])
     for env_name in _ENV_NAMES:
-        for dataset_name in _DATASET_NAMES:
+
+        for dataset_name in ['expert']:
             print(env_name, dataset_name)
             try:
                 episode_dataset = get_dataset(env_name, dataset_name)
@@ -49,11 +51,11 @@ def generate_dataset_stats():
                     **{f'{k}-score': v for k, v in episode_score.items()},
                     **{f'{k}-len': v for k, v in episode_length.items()}
                 })
-                df = pd.concat([df, new_row.to_frame().T], ignore_index=True)
+                train_df = pd.concat([train_df, new_row.to_frame().T], ignore_index=True)
             except Exception as e:
                 print(e)
 
-    return df
+    return train_df
 
 
 if __name__ == '__main__':

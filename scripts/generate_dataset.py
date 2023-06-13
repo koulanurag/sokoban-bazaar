@@ -1,5 +1,8 @@
 import gym
 import argparse
+
+import numpy as np
+
 import sokoban_bazaar
 from sokoban_bazaar.utils import domain_pddl_path
 import os
@@ -10,6 +13,7 @@ from sokoban_bazaar.solver import PDDL, symbolic_state
 import random
 import pickle
 from sokoban_bazaar.dataset import get_dataset
+
 
 def generate_offline_dataset(
         env,
@@ -183,25 +187,17 @@ def __main():
     env = gym.make(args.env_name)
     dataset_dir = os.path.join(args.dataset_dir, args.env_name,
                                args.env_observation_mode, args.dataset_quality)
-    # os.makedirs(dataset_dir, exist_ok=True)
-    # generate_offline_dataset(
-    #     env=env,
-    #     domain_pddl_path=domain_pddl_path(args.env_name),
-    #     dataset_quality=args.dataset_quality,
-    #     env_observation_mode=args.env_observation_mode,
-    #     dataset_dir=dataset_dir,
-    #     max_episodes=args.max_episodes,
-    #     episode_start_idx=args.episode_start_idx
-    # )
 
-
-    episode_dataset = get_dataset(args.env_name, args.dataset_quality)
-    train_states = dict()
-    for file in tqdm(episode_dataset.episode_files):
-        observations = pickle.load(open(file, 'rb'))['observations']
-        if observations[0] not in train_states:
-            train_states[observations[0]] = None
-    pass
+    os.makedirs(dataset_dir, exist_ok=True)
+    generate_offline_dataset(
+        env=env,
+        domain_pddl_path=domain_pddl_path(args.env_name),
+        dataset_quality=args.dataset_quality,
+        env_observation_mode=args.env_observation_mode,
+        dataset_dir=dataset_dir,
+        max_episodes=args.max_episodes,
+        episode_start_idx=args.episode_start_idx
+    )
 
     # log to file
     print(f"Data generated and stored at {dataset_dir}")

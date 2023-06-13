@@ -27,24 +27,20 @@ code:
 
 search:
   job_template:
-    name: dt_sokoban_{experiment_name:s}_{auto:3s}
+    name: dt_sokoban_split_{experiment_name:s}_{auto:3s}
     sku: 2C2
     sla_tier: premium  # [basic, standard, premium]
     execution_mode: basic  # [basic, managed]
     priority: high  # [low, medium, high]
     submit_args:
       env:
-        { WANDB_API_KEY: $WANDB_API_KEY }
+        { SOKOBAN_DATASET_ROOT_PATH: "/mnt/dt_sokoban/datasets/" }
     command:
       - pip install -e .
       - cd scripts
-      - python generate_dataset.py
+      - python generate_test_states.py
         --dataset-dir /mnt/dt_sokoban/datasets/
-        --dataset-quality {dataset_quality}
         --env-name {env}
-        --env-observation-mode tiny_rgb_array
-        --max-episodes 100
-        --episode-start-idx {episode_start_idx}
   type: grid
   max_trials: 25001
   params:
@@ -52,16 +48,8 @@ search:
       spec: discrete
       values: [
 #        "Sokoban5x5-v0",
-#        "gym_sokoban:Sokoban-v2",
+        "gym_sokoban:Sokoban-v2",
 #        "gym_sokoban:Sokoban-small-v1",
-#        "gym_sokoban:Sokoban-large-v0",
+        "gym_sokoban:Sokoban-large-v0",
 #        "gym_sokoban:Sokoban-large-v1"
       ]
-
-    - name: episode_start_idx
-      spec: discrete
-      values: range(0,50000,100)
-
-    - name: dataset_quality
-      spec: discrete
-      values: [ 'expert']

@@ -25,3 +25,12 @@ def test_dataset(env_name, dataset_name):
                                                "returns_to_go",
                                                "timesteps"])
         break
+
+
+@pytest.mark.parametrize('env_name',
+                         [_env_name for _env_name in ['Sokoban5x5-v0']])
+def test_test_envs(env_name):
+    from sokoban_bazaar.dataset import get_test_envs
+    for test_env in get_test_envs(env_name):
+        test_env.step(test_env.action_space.sample())
+        test_env.close()
