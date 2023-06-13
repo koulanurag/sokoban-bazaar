@@ -71,27 +71,6 @@ def pad_episodic_batch(batch):
     return padded_batch
 
 
-def episode_data_loader(episode_dataset,
-                        batch_size=1,
-                        shuffle=True,
-                        num_workers=0):
-    # imbalanced data handling
-    weights = (np.ones(len(train_remember)) * 1 / len(train_remember)).tolist()
-    weights += (np.ones(len(train_forget)) * 1 / len(train_forget)).tolist()
-    train_data_sampler = WeightedRandomSampler(
-        weights, len(weights), replacement=True
-    )
-
-    return DataLoader(
-        episode_dataset,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        num_workers=num_workers,
-        collate_fn=pad_batch,
-        sampler=train_data_sampler,
-    )
-
-
 def get_test_envs(env_name):
     if env_name not in _ENV_NAMES:
         raise ValueError()

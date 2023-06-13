@@ -11,10 +11,12 @@ def domain_pddl_path(env_name):
 
 def set_state(env, tiny_rgb_observation):
     sym_state, info = symbolic_state(tiny_rgb_observation)
-    env.reset()
     env.unwrapped.room_fixed = info['room_fixed']
     env.unwrapped.room_state = info['room_state']
     env.unwrapped.box_mapping = info['box_mapping']
     env.unwrapped.player_position = np.argwhere(env.room_state == 5)[0]
-
+    env.unwrapped.num_env_steps = 0
+    env.unwrapped.reward_last = 0
+    env.unwrapped.boxes_on_target = 0
+    env._has_reset = True
     return env

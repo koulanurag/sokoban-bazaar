@@ -1,5 +1,5 @@
 import pytest
-from sokoban_bazaar.dataset import get_dataset, episode_data_loader, _ENV_NAMES, _DATASET_NAMES
+from sokoban_bazaar.dataset import get_dataset, _ENV_NAMES, _DATASET_NAMES
 
 
 @pytest.mark.parametrize('env_name,dataset_name',

@@ -6,7 +6,7 @@ target:
 environment:
   image: amlt-sing/pytorch-1.10.0-cuda11.4-a100
   image_setup:
-    - pip3 install wandb --upgrade
+    - pip3 install wandb
     - pip3 install pyglet --upgrade
     - pip install 'setuptools<=66'
     - pip3 install gym==0.21.0
@@ -50,6 +50,6 @@ search:
 #        "Sokoban5x5-v0",
         "gym_sokoban:Sokoban-v2",
 #        "gym_sokoban:Sokoban-small-v1",
-        "gym_sokoban:Sokoban-large-v0",
+#        "gym_sokoban:Sokoban-large-v0",
 #        "gym_sokoban:Sokoban-large-v1"
       ]

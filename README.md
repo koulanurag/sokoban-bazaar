@@ -37,7 +37,7 @@ for batch in episode_dataloader:
 ```python
 from sokoban_bazaar.dataset import get_test_envs
 
-test_envs = get_test_envs(env_name="gym_sokoban:Sokoban-v2", dataset_name="expert")
+test_envs = get_test_envs(env_name="gym_sokoban:Sokoban-v2")
 
 for env in test_envs:
     done = False

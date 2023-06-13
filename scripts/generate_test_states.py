@@ -43,7 +43,7 @@ def get_args():
 
 def __main():
     args = get_args()
-    episode_dataset = get_dataset(args.env_name, 'expert')
+    episode_dataset, _ = get_dataset(args.env_name, 'expert')
     train_states = dict()
     for file_idx, file in enumerate(tqdm(episode_dataset.episode_files)):
         try:
@@ -79,7 +79,7 @@ def __main():
 
     # remove test-episodes from other datasets
     for dataset_name in ['random', 'expert']:
-        episode_dataset = get_dataset(args.env_name, dataset_name)
+        episode_dataset, _ = get_dataset(args.env_name, dataset_name)
         for file_idx, file in enumerate(tqdm(episode_dataset.episode_files)):
             try:
                 with open(file, 'rb') as data_file:
