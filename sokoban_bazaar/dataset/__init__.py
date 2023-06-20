@@ -3,12 +3,14 @@ import gym
 from ..utils import set_state
 from torch.utils.data import DataLoader, WeightedRandomSampler
 
-_ENV_NAMES = ["gym_sokoban:Sokoban-small-v0",
-              "gym_sokoban:Sokoban-small-v1",
-              "gym_sokoban:Sokoban-v2",
-              "Sokoban5x5-v0",
-              "gym_sokoban:Sokoban-large-v0",
-              "gym_sokoban:Sokoban-large-v1"]
+_ENV_NAMES = [
+    # "gym_sokoban:Sokoban-small-v0",
+    "gym_sokoban:Sokoban-small-v1",
+    "gym_sokoban:Sokoban-v2",
+    "Sokoban5x5-v0",
+    "gym_sokoban:Sokoban-large-v0",
+    "gym_sokoban:Sokoban-large-v1",
+    "gym_sokoban:Boxoban-Train-v0"]
 _DATASET_NAMES = ['random',
                   'expert',
                   # 'medium',
@@ -75,14 +77,34 @@ def get_test_envs(env_name):
     if env_name not in _ENV_NAMES:
         raise ValueError()
 
+    if 'Boxoban' in env_name:
+        return get_boxban_test_envs(env_name)
+    else:
+        with open(os.path.join(root_dir(), env_name, 'test_states.p'), 'rb') as test_files:
+            test_states = pickle.load(test_files)
+
+        test_envs = []
+        for _, test_state_info in test_states.items():
+            env = gym.make(env_name)
+            set_state(env, test_state_info['tiny_rgb_array'])
+            test_envs.append(env)
+
+    return test_envs
+
+
+def get_boxban_test_envs(env_name):
+    assert env_name in ['gym_sokoban:Boxoban-Train-v0']
+
     with open(os.path.join(root_dir(), env_name, 'test_states.p'), 'rb') as test_files:
         test_states = pickle.load(test_files)
 
     test_envs = []
-    for _, test_state_info in test_states.items():
-        env = gym.make(env_name)
-        set_state(env, test_state_info['tiny_rgb_array'])
-        test_envs.append(env)
+    for start_idx in range(0, 1000, 100):
+        for test_state_info in test_states[start_idx+70: start_idx + 100]:
+            env = gym.make(env_name, reset=False)
+            set_state(env, test_state_info['tiny_rgb_array'])
+            test_state_info['hardness-level'] = start_idx
+            test_envs.append((env, test_state_info))
 
     return test_envs
 

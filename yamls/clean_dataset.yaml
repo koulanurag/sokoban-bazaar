@@ -1,4 +1,4 @@
-description: Generate Sokoban Episodic Dataset
+description: Generate Stats of Sokoban Dataset
 target:
   service: sing
   name: msrresrchvc
@@ -27,42 +27,24 @@ code:
 
 search:
   job_template:
-    name: dt_sokoban_{experiment_name:s}_{auto:3s}
+    name: clean_dataset_test_set_{auto:3s}
     sku: 2C2
     sla_tier: premium  # [basic, standard, premium]
     execution_mode: basic  # [basic, managed]
     priority: high  # [low, medium, high]
     submit_args:
       env:
-        { WANDB_API_KEY: $WANDB_API_KEY }
+        { SOKOBAN_DATASET_ROOT_PATH: "/mnt/dt_sokoban/datasets/" }
     command:
       - pip install -e .
+      - pip install -e ".[scripts]"
       - cd scripts
-      - python generate_dataset.py
-        --dataset-dir /mnt/dt_sokoban/datasets/
-        --dataset-quality {dataset_quality}
-        --env-name {env}
-        --env-observation-mode tiny_rgb_array
-        --max-episodes 100
+      - python clean_dataset.py
         --episode-start-idx {episode_start_idx}
+        --max-episodes 50000
   type: grid
   max_trials: 25001
   params:
-    - name: env
-      spec: discrete
-      values: [
-        "gym_sokoban:Boxoban-Train-v0"
-        "gym_sokoban:Boxoban-Train-v1"
-      ]
-
-    - name: source_file_idx
-      spec: discrete
-      values: range(0,900)
-
     - name: episode_start_idx
       spec: discrete
-      values: range(0,50000,100)
-
-    - name: dataset_quality
-      spec: discrete
-      values: [ 'expert' ]
+      values: range(0,900000,50000)

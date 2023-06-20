@@ -21,18 +21,24 @@ def generate_offline_dataset(
         dataset_quality,
         env_observation_mode,
         dataset_dir,
+        source_file_idx,
         max_episodes=1,
         episode_start_idx=0,
-        is_boxban=False,
-        source_file=None,
 ):
     total_step_count = 0
     done = True
     episode_count = 0
 
     # seed env
-    env.action_space.seed(episode_start_idx)
-    env.seed(episode_start_idx)
+    # env.action_space.seed(episode_start_idx)
+    # env.seed(episode_start_idx)
+
+    cache_path = os.environ.get('SOKOBAN_CACHE_PATH', default='.sokoban_cache')
+    train_data_dir = os.path.join(cache_path, 'boxoban-levels-master',
+                                  env.unwrapped.difficulty, env.unwrapped.split)
+    assert source_file_idx < 1000
+    source_file = os.path.join(train_data_dir,
+                               f"{'0' * (3 - len(str(int(source_file_idx)))) + str(source_file_idx)}.txt")
 
     with tqdm(total=max_episodes) as pbar:
         while episode_count < max_episodes:
@@ -43,15 +49,12 @@ def generate_offline_dataset(
             if done:
                 episode_step_i = 0
                 episode_info = defaultdict(lambda: [])
-                if is_boxban:
-                    env.reset(source_file=source_file,
-                              map_idx=episode_start_idx + episode_count)
-                else:
-                    env.reset()
+                env.reset(source_file=source_file,
+                          map_idx=episode_start_idx + episode_count)
                 obs_img = env.render(mode=env_observation_mode)
 
                 if dataset_quality != "random":
-                    sym_state = symbolic_state(env.render(mode="tiny_rgb_array"))
+                    sym_state,_ = symbolic_state(env.render(mode="tiny_rgb_array"))
                     pddl = PDDL(
                         sym_state,
                         domain_pddl_path=domain_pddl_path,
@@ -105,7 +108,7 @@ def generate_offline_dataset(
                     dict(episode_info),
                     open(os.path.join(
                         dataset_dir,
-                        f"episode_{episode_start_idx + episode_count}.p"),
+                        f"episode_{source_file_idx}_{episode_start_idx + episode_count}.p"),
                         "wb"
                     ),
                 )
@@ -139,14 +142,6 @@ def get_args():
     env_args.add_argument(
         "--env-name",
         default="Sokoban5x5-v0",
-        choices=[
-            "gym_sokoban:Sokoban-small-v0",
-            "gym_sokoban:Sokoban-small-v1",
-            "gym_sokoban:Sokoban-v2",
-            "Sokoban5x5-v0",
-            "gym_sokoban:Sokoban-large-v0",
-            "gym_sokoban:Sokoban-large-v1",
-        ],
         help="name of the environment",
     )
     env_args.add_argument(
@@ -180,6 +175,12 @@ def get_args():
         type=int,
         help="max number steps for data collection",
     )
+    data_generation_args.add_argument(
+        "--source-file-idx",
+        default=0,
+        type=int,
+        help="max number steps for data collection",
+    )
 
     # process arguments
     args = parser.parse_args()
@@ -203,6 +204,7 @@ def __main():
         dataset_dir=dataset_dir,
         max_episodes=args.max_episodes,
         episode_start_idx=args.episode_start_idx,
+        source_file_idx=args.source_file_idx,
     )
 
     # log to file

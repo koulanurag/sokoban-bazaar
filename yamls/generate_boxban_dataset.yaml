@@ -23,7 +23,7 @@ storage:
     is_output: true
 
 code:
-  local_dir: $CONFIG_DIR/..
+  local_dir: $CONFIG_DIR/../..
 
 search:
   job_template:
@@ -34,17 +34,22 @@ search:
     priority: high  # [low, medium, high]
     submit_args:
       env:
-        { WANDB_API_KEY: $WANDB_API_KEY }
+        { SOKOBAN_CACHE_PATH: /mnt/dt_sokoban/datasets/.sokoban_cache,
+          WANDB_API_KEY: $WANDB_API_KEY }
     command:
+      - cd gym-sokoban
+      - pip install -e .
+      - cd ../sokoban-bazaar
       - pip install -e .
       - cd scripts
-      - python generate_dataset.py
+      - python generate_boxban_dataset.py
         --dataset-dir /mnt/dt_sokoban/datasets/
         --dataset-quality {dataset_quality}
         --env-name {env}
         --env-observation-mode tiny_rgb_array
-        --max-episodes 100
-        --episode-start-idx {episode_start_idx}
+        --max-episodes 1000
+        --episode-start-idx 0
+        --source-file-idx {source_file_idx}
   type: grid
   max_trials: 25001
   params:
@@ -52,16 +57,11 @@ search:
       spec: discrete
       values: [
         "gym_sokoban:Boxoban-Train-v0"
-        "gym_sokoban:Boxoban-Train-v1"
       ]
 
     - name: source_file_idx
       spec: discrete
       values: range(0,900)
-
-    - name: episode_start_idx
-      spec: discrete
-      values: range(0,50000,100)
 
     - name: dataset_quality
       spec: discrete
