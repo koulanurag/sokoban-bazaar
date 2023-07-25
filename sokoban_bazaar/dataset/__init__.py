@@ -2,6 +2,8 @@ from pathlib import Path
 import gym
 from ..utils import set_state
 from torch.utils.data import DataLoader, WeightedRandomSampler
+from gym_sokoban.envs import SokobanEnv
+from tqdm import tqdm
 
 _ENV_NAMES = [
     # "gym_sokoban:Sokoban-small-v0",
@@ -22,7 +24,6 @@ import pickle
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset
 
 
 def root_dir():
@@ -30,47 +31,82 @@ def root_dir():
                           default=os.path.join(Path.home(), ".sokoban-datasets"))
 
 
-def get_dataset(env_name, dataset_name, dataset_size=None):
+# def get_trajectories(env_name, dataset_name, dataset_size=None):
+#     if env_name not in _ENV_NAMES:
+#         raise ValueError()
+#     if dataset_name not in _DATASET_NAMES:
+#         raise ValueError()
+#
+#     if dataset_name in ['expert', 'random', 'expert-random']:
+#         episode_file_paths = []
+#         sub_dataset_names = dataset_name.split("-")
+#         weights = []
+#         for sub_dataset_name in sub_dataset_names:
+#             dataset_dir = os.path.join(root_dir(), env_name, 'tiny_rgb_array',
+#                                        sub_dataset_name)
+#             dataset_files = os.listdir(dataset_dir)
+#
+#             if dataset_size is None:
+#                 sub_dataset_size = len(dataset_files) // len(sub_dataset_names)
+#             else:
+#                 sub_dataset_size = dataset_size // len(sub_dataset_names)
+#
+#             episode_file_paths += [os.path.join(dataset_dir, file)
+#                                    for file in dataset_files[:sub_dataset_size]]
+#             weights += (np.ones(len(dataset_files[:sub_dataset_size]))
+#                        * 1 / len(dataset_files[:sub_dataset_size])).tolist()
+#     else:
+#         raise ValueError()
+#
+#     try:
+#         trajectories = []
+#         for file_path in tqdm(episode_file_paths):
+#             with open(os.path.join(file_path), "rb") as data_file:
+#                 episode = pickle.load(data_file)
+#             trajectories.append({k: np.array(v) for k, v in episode.items()})
+#
+#         with open(os.path.join(root_dir(),env_name, 'tiny_rgb_array',
+#                                dataset_name, 'trajectories.p'), 'wb') as trajectories_file:
+#             pickle.dump(trajectories, trajectories_file)
+#     except:
+#         import pdb; pdb.set_trace()
+#
+#     import sys;
+#     sys.exit(0)
+#     return Trajectories(episode_file_paths), \
+#         WeightedRandomSampler(weights, len(weights), replacement=True)
+
+# @profile
+def get_trajectories(env_name, dataset_name, dataset_size=None):
     if env_name not in _ENV_NAMES:
         raise ValueError()
-    if dataset_name not in _DATASET_NAMES:
+    if dataset_name not in ['expert']:
         raise ValueError()
 
     if dataset_name in ['expert', 'random', 'expert-random']:
-        episode_file_paths = []
+        trajectories = []
         sub_dataset_names = dataset_name.split("-")
         weights = []
         for sub_dataset_name in sub_dataset_names:
-            dataset_dir = os.path.join(root_dir(), env_name, 'tiny_rgb_array',
-                                       sub_dataset_name)
-            dataset_files = os.listdir(dataset_dir)
+            with open(os.path.join(root_dir(), env_name,
+                                   'tiny_rgb_array', sub_dataset_name, 'trajectories.p'),
+                      'rb') as trajectories_file:
 
-            if dataset_size is None:
-                sub_dataset_size = len(dataset_files) // len(sub_dataset_names)
-            else:
-                sub_dataset_size = dataset_size // len(sub_dataset_names)
+                sub_dataset = pickle.load(trajectories_file)
 
-            episode_file_paths += [os.path.join(dataset_dir, file)
-                                   for file in dataset_files[:sub_dataset_size]]
-            weights = (np.ones(len(dataset_files[:sub_dataset_size]))
-                       * 1 / len(dataset_files[:sub_dataset_size])).tolist()
+                if dataset_size is None:
+                    sub_dataset_size = len(sub_dataset) // len(sub_dataset_names)
+                else:
+                    sub_dataset_size = dataset_size // len(sub_dataset_names)
+
+                trajectories += sub_dataset[:sub_dataset_size]
+                weights += (np.ones(len(sub_dataset[:sub_dataset_size]))
+                            * 1 / len(sub_dataset[:sub_dataset_size])).tolist()
     else:
         raise ValueError()
 
-    return EpisodeDataset(episode_file_paths), \
+    return trajectories, \
         WeightedRandomSampler(weights, len(weights), replacement=True)
-
-
-def pad_episodic_batch(batch):
-    # Sort the batch in descending order of sequence length
-    batch = sorted(batch, key=lambda x: len(x["observations"]), reverse=True)
-
-    # Pad the sequences to have the same length
-    padded_batch = {
-        k: torch.nn.utils.rnn.pad_sequence([_[k] for _ in batch], batch_first=True)
-        for k in batch[0].keys()
-    }
-    return padded_batch
 
 
 def get_test_envs(env_name):
@@ -85,9 +121,10 @@ def get_test_envs(env_name):
 
         test_envs = []
         for _, test_state_info in test_states.items():
-            env = gym.make(env_name)
-            set_state(env, test_state_info['tiny_rgb_array'])
-            test_envs.append(env)
+            env = SokobanCustomResetEnv(reset=False)
+            env.reset(tiny_rgb_state=test_state_info['tiny_rgb_array'])
+            test_state_info['hardness-level'] = 0
+            test_envs.append((env, test_state_info))
 
     return test_envs
 
@@ -100,20 +137,22 @@ def get_boxban_test_envs(env_name):
 
     test_envs = []
     for start_idx in range(0, 1000, 100):
-        for test_state_info in test_states[start_idx+70: start_idx + 100]:
-            env = gym.make(env_name, reset=False)
-            set_state(env, test_state_info['tiny_rgb_array'])
+        for test_state_info in test_states[start_idx + 70: start_idx + 100]:
+            env = SokobanCustomResetEnv(reset=False)
+            env.reset(tiny_rgb_state=test_state_info['tiny_rgb_array'])
+            # set_state(env, test_state_info['tiny_rgb_array'])
             test_state_info['hardness-level'] = start_idx
             test_envs.append((env, test_state_info))
 
     return test_envs
 
 
-class EpisodeDataset(Dataset):
+class Trajectories:
     """Episode dataset."""
 
-    def __init__(self, episode_file_paths):
-        self.episode_files = episode_file_paths
+    def __init__(self, trajectories):
+        self.trajectories = trajectories
+        self.index = 0
 
     def __len__(self):
         return len(self.episode_files)
@@ -122,21 +161,60 @@ class EpisodeDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        episode = pickle.load(open(os.path.join(self.episode_files[idx]), "rb"))
-
+        with open(os.path.join(self.episode_files[idx]), "rb") as data_file:
+            episode = pickle.load(data_file)
         observations = np.array(episode["observations"])
-        actions = np.append(episode["actions"], episode["actions"][-1])
-        rewards = np.append(episode["rewards"], 0)
-        returns_to_go = np.append(episode["returns_to_go"], 0)
-        timesteps = np.append(episode["timesteps"], episode["timesteps"][-1] + 1)
+        actions = np.array(episode["actions"])
+        rewards = np.array(episode["rewards"])
+        returns_to_go = np.array(episode["returns_to_go"])
+        timesteps = np.array(episode["timesteps"])
 
         # create tensors
         episode_info = {
-            "observations": torch.FloatTensor(observations),
-            "actions": torch.LongTensor(actions),
-            "rewards": torch.FloatTensor(rewards),
-            "returns_to_go": torch.FloatTensor(returns_to_go).unsqueeze(-1),
-            "timesteps": torch.LongTensor(timesteps),
+            "observations": observations,
+            "actions": actions,
+            "rewards": rewards,
+            "returns_to_go": returns_to_go,
+            "timesteps": timesteps,
         }
-        episode_info["attention_mask"] = torch.ones_like(episode_info["timesteps"])
         return episode_info
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index >= len(self):
+            raise StopIteration
+        value = self[self.index]
+        self.index += 1
+        return value
+
+
+class SokobanCustomResetEnv(SokobanEnv):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def reset(self, second_player=False, render_mode='rgb_array', tiny_rgb_state=None):
+        if tiny_rgb_state is None:
+            return super().reset()
+
+        else:
+            return self.reset_to_state(tiny_rgb_state=tiny_rgb_state,
+                                       second_player=second_player,
+                                       render_mode=render_mode)
+
+    def reset_to_state(self, tiny_rgb_state, second_player=False, render_mode='rgb_array'):
+        from ..solver import symbolic_state
+
+        sym_state, info = symbolic_state(tiny_rgb_state)
+        self.room_fixed = info['room_fixed']
+        self.room_state = info['room_state']
+        self.box_mapping = info['box_mapping']
+
+        self.player_position = np.argwhere(self.room_state == 5)[0]
+        self.num_env_steps = 0
+        self.reward_last = 0
+        self.boxes_on_target = 0
+        self._has_reset = True
+
+        return self.render(render_mode)
