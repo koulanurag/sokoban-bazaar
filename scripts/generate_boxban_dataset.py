@@ -52,9 +52,9 @@ def generate_offline_dataset(
                 env.reset(source_file=source_file,
                           map_idx=episode_start_idx + episode_count)
                 obs_img = env.render(mode=env_observation_mode)
+                sym_state, obs_info = symbolic_state(env.render(mode="tiny_rgb_array"))
 
                 if dataset_quality != "random":
-                    sym_state,_ = symbolic_state(env.render(mode="tiny_rgb_array"))
                     pddl = PDDL(
                         sym_state,
                         domain_pddl_path=domain_pddl_path,
@@ -77,6 +77,7 @@ def generate_offline_dataset(
 
             _, reward, done, info = env.step(action)
             next_obs_img = env.render(mode=env_observation_mode)
+            _, next_obs_info = symbolic_state(env.render(mode="tiny_rgb_array"))
             total_step_count += 1
             episode_step_i += 1
 
@@ -88,6 +89,7 @@ def generate_offline_dataset(
             episode_info["rewards"].append(reward)
             episode_info["dones"].append(done)
             episode_info["timesteps"].append(episode_step_i)
+            episode_info['symbolic_state'].append(obs_info['true_state'].flatten())
 
             # ##########################################################################
             # Save episode
@@ -121,6 +123,7 @@ def generate_offline_dataset(
                 )
 
             obs_img = next_obs_img
+            obs_info = next_obs_info
 
 
 def get_args():

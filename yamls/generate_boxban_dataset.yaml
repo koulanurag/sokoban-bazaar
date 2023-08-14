@@ -28,10 +28,10 @@ code:
 search:
   job_template:
     name: dt_sokoban_{experiment_name:s}_{auto:3s}
-    sku: 2C2
-    sla_tier: premium  # [basic, standard, premium]
-    execution_mode: basic  # [basic, managed]
-    priority: high  # [low, medium, high]
+    sku: 1C1
+#    sla_tier: premium  # [basic, standard, premium]
+#    execution_mode: basic  # [basic, managed]
+#    priority: high  # [low, medium, high]
     submit_args:
       env:
         { SOKOBAN_CACHE_PATH: /mnt/dt_sokoban/datasets/.sokoban_cache,
@@ -61,8 +61,8 @@ search:
 
     - name: source_file_idx
       spec: discrete
-      values: range(0,900)
+      values: range(0,500)
 
     - name: dataset_quality
       spec: discrete
-      values: [ 'expert' ]
+      values: [ 'random' ]

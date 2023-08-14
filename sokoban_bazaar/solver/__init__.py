@@ -16,13 +16,15 @@ def symbolic_state(obs):
     # Room structure: represents the current state of the room including movable parts
     info = {'room_fixed': np.zeros(shape=(height, width), dtype=int),
             'room_state': np.zeros(shape=(height, width), dtype=int),
+            'true_state': np.zeros(shape=(height, width), dtype=int),
             'box_mapping': dict()}
     _object_name_to_idx = {'wall': 0,
                            'floor': 1,
                            'box_target': 2,
                            'box_off_target': 3,
                            'box_on_target': 4,
-                           'player_off_target': 5}
+                           'player_off_target': 5,
+                           "player_on_target": 6}
     for row_i in range(height):
         for col_i in range(width):
             _object_color = tuple(obs[row_i, col_i, :])
@@ -45,6 +47,8 @@ def symbolic_state(obs):
                 raise ValueError("only 'tiny_rgb_array' are supported")
 
             _symbolic_obs[row_i][col_i] = _object_name
+            info['true_state'][row_i][col_i] = _object_name_to_idx[_object_name]
+
             info['box_mapping'][(row_i, col_i)] = (row_i, col_i)
 
             info['room_fixed'][row_i][col_i] = _object_name_to_idx[_object_name]
@@ -301,7 +305,7 @@ if __name__ == "__main__":
 
         # task pddl formulation
         env.reset()
-        _symbolic_state = symbolic_state(env.render("tiny_rgb_array"))
+        _symbolic_state,_ = symbolic_state(env.render("tiny_rgb_array"))
         pddl = PDDL(
             _symbolic_state,
             domain_pddl_path=os.path.join(os.getcwd(), "assets", "sokoban_domain.pddl"),

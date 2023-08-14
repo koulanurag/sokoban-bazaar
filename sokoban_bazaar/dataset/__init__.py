@@ -80,7 +80,7 @@ def root_dir():
 def get_trajectories(env_name, dataset_name, dataset_size=None):
     if env_name not in _ENV_NAMES:
         raise ValueError()
-    if dataset_name not in ['expert']:
+    if dataset_name not in ['expert', 'random', 'expert-random']:
         raise ValueError()
 
     if dataset_name in ['expert', 'random', 'expert-random']:
@@ -94,11 +94,12 @@ def get_trajectories(env_name, dataset_name, dataset_size=None):
 
                 sub_dataset = pickle.load(trajectories_file)
 
-                if dataset_size is None:
-                    sub_dataset_size = len(sub_dataset) // len(sub_dataset_names)
-                else:
-                    sub_dataset_size = dataset_size // len(sub_dataset_names)
-
+                # if dataset_size is None:
+                #     sub_dataset_size = len(sub_dataset) // len(sub_dataset_names)
+                # else:
+                #     sub_dataset_size = dataset_size // len(sub_dataset_names)
+                #
+                sub_dataset_size = len(sub_dataset)
                 trajectories += sub_dataset[:sub_dataset_size]
                 weights += (np.ones(len(sub_dataset[:sub_dataset_size]))
                             * 1 / len(sub_dataset[:sub_dataset_size])).tolist()
