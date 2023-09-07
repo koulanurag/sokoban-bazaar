@@ -23,13 +23,13 @@ def save_transitions(dataset_dir):
     use_symbolic_state = True
     print('loading data')
 
-    loaded_data = b''
-    for chunk in load_pickle_with_progress(os.path.join(dataset_dir, 'trajectories.p')):
-        loaded_data += chunk
-    episodes = pickle.loads(loaded_data)
+    # loaded_data = b''
+    # for chunk in load_pickle_with_progress(os.path.join(dataset_dir, 'trajectories.p')):
+    #     loaded_data += chunk
+    # episodes = pickle.loads(loaded_data)
 
-    # with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
-    #     episodes = pickle.load(trajectories_file)
+    with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
+        episodes = pickle.load(trajectories_file)
 
     print('data loaded ')
     for episode_i, episode in enumerate(tqdm(episodes, desc="Transition Dataset Processing:")):
