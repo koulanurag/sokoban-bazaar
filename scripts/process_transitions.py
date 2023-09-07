@@ -74,15 +74,12 @@ def save_transitions(dataset_dir):
         loaded_data += chunk
     episodes = pickle.loads(loaded_data)
 
-    # with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
-    #     episodes = pickle.load(trajectories_file)
-
     print('data loaded ')
     transition_data = {'actions': None,
                        'observations': None,
                        'next_observations': None,
                        'rewards': None}
-    max_process = 32
+    max_process = 8
     chunk_size = len(episodes) // max_process
     episode_chunks = [(e_i, episodes[i:i + chunk_size]) for e_i, i in
                       enumerate(range(0, len(episodes), chunk_size))]
