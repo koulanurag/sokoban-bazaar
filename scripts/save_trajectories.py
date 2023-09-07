@@ -12,15 +12,21 @@ from multiprocessing import Pool
 
 
 def process_files(file_paths):
+    dataset_dir, id, file_paths = file_paths
     trajectories = []
-    for file_path in tqdm(file_paths, desc=f"{file_paths[0]}"):
-        dataset_dir = '/Users/anuragkoul/.sokoban-datasets/gym_sokoban:Boxoban-Train-v0/tiny_rgb_array/random'
+    for file_path in tqdm(file_paths, desc=f"{id}"):
         file_path = os.path.join(dataset_dir, file_path)
         if 'episode' in file_path:
             try:
                 with open(file_path, 'rb') as _file:
                     episode = pickle.load(_file)
-                    trajectories.append({k: np.array(v) for k, v in episode.items()})
+                    trajectories.append({'observations': np.array(episode['observations']),
+                                         'actions': np.array(episode['actions']).astype(np.int8),
+                                         'rewards': np.array(episode['rewards']).astype(np.float32),
+                                         'dones': np.array(episode['dones']),
+                                         'timesteps': np.array(episode['timesteps']).astype(np.uint16),
+                                         'symbolic_state': np.array(episode['symbolic_state']).astype(np.uint8),
+                                         'returns_to_go': np.array(episode['returns_to_go']).astype(np.float32)})
             except:
                 os.remove(file_path)
     return trajectories
@@ -28,13 +34,13 @@ def process_files(file_paths):
 
 def save_trajectories(dataset_dir):
     episode_files = os.listdir(dataset_dir)
-    episode_files = episode_files[:len(episode_files)//2]
+    episode_files = episode_files[:len(episode_files) // 2]
 
     trajectories = []
 
     chunk_size = len(episode_files) // 5
-    episode_file_chunks = [episode_files[i:i + chunk_size]
-                           for i in range(0, len(episode_files), chunk_size)]
+    episode_file_chunks = [(dataset_dir, id, episode_files[i:i + chunk_size])
+                           for id, i in enumerate(range(0, len(episode_files), chunk_size))]
     with Pool(5) as p:
         for x in p.map(process_files, episode_file_chunks):
             trajectories += x
@@ -47,31 +53,6 @@ def save_trajectories(dataset_dir):
 
     with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
         pickle.load(trajectories_file)
-
-
-#
-# def save_trajectories(dataset_dir):
-#     episode_files = os.listdir(dataset_dir)
-#
-#     trajectories = []
-#     removed_files = []
-#     for file_path in tqdm(episode_files):
-#         file_path = os.path.join(dataset_dir, file_path)
-#
-#         if 'episode' in file_path:
-#             try:
-#                 with open(file_path, 'rb') as _file:
-#                     episode = pickle.load(_file)
-#             except:
-#                 os.remove(file_path)
-#                 removed_files.append(file_path)
-#             trajectories.append({k: np.array(v) for k, v in episode.items()})
-#
-#             with open(os.path.join(dataset_dir, 'trajectories.p'), 'wb') as trajectories_file:
-#                 pickle.dump(trajectories, trajectories_file)
-#
-#             with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
-#                 pickle.load(trajectories_file)
 
 
 def get_args():

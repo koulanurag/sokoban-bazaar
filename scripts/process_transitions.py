@@ -50,6 +50,10 @@ def process_episodes(episodes):
     for episode_i, episode in enumerate(tqdm(episodes, desc=f"#{idx}  Processing:")):
         obs_key = 'symbolic_state' if use_symbolic_state else 'observations'
 
+        episode['actions'] = episode['actions'].astype(np.int8)
+        episode[obs_key] = episode[obs_key].astype(np.int8)
+        episode['rewards'] = episode['rewards'].astype(np.float32)
+
         if episode_i > 0:
             actions = np.concatenate((actions, episode['actions']))
             observations = np.concatenate((observations, episode[obs_key][:-1]))
