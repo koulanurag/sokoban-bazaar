@@ -6,27 +6,30 @@ import argparse
 from pathlib import Path
 
 
+def load_pickle_with_progress(pickle_file):
+    file_size = os.path.getsize(pickle_file)
 
-def process_files(file_paths):
-    trajectories = []
-    for file_path in tqdm(file_paths, desc=f"{file_paths[0]}"):
-        dataset_dir = '/Users/anuragkoul/.sokoban-datasets/gym_sokoban:Boxoban-Train-v0/tiny_rgb_array/random'
-        file_path = os.path.join(dataset_dir, file_path)
-        if 'episode' in file_path:
-            try:
-                with open(file_path, 'rb') as _file:
-                    episode = pickle.load(_file)
-                    trajectories.append({k: np.array(v) for k, v in episode.items()})
-            except:
-                os.remove(file_path)
-    return trajectories
+    with open(pickle_file, 'rb') as file:
+        with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
+            while True:
+                data = file.read(1024)
+                if not data:
+                    break
+                pbar.update(len(data))
+                yield data
 
 
 def save_transitions(dataset_dir):
     use_symbolic_state = True
     print('loading data')
-    with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
-        episodes = pickle.load(trajectories_file)
+
+    loaded_data = b''
+    for chunk in load_pickle_with_progress(os.path.join(dataset_dir, 'trajectories.p')):
+        loaded_data += chunk
+    episodes = pickle.loads(loaded_data)
+
+    # with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
+    #     episodes = pickle.load(trajectories_file)
 
     print('data loaded ')
     for episode_i, episode in enumerate(tqdm(episodes, desc="Transition Dataset Processing:")):
