@@ -48,9 +48,6 @@ def save_trajectories(dataset_dir):
     with open(os.path.join(dataset_dir, 'trajectories.p'), 'wb') as trajectories_file:
         pickle.dump(trajectories, trajectories_file)
 
-    import pdb;
-    pdb.set_trace()
-
     with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
         pickle.load(trajectories_file)
 
