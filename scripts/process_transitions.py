@@ -83,12 +83,12 @@ def save_transitions(dataset_dir):
                        'next_observations': np.array([]),
                        'rewards': np.array([])}
     max_process = 32
-    episode_chunks = [(i, episodes[i:i + max_process]) for i in range(0, len(episodes), max_process)]
+    episode_chunks = [(e_i, episodes[i:i + max_process]) for e_i,i in enumerate(range(0, len(episodes), max_process))]
     with Pool(max_process) as p:
         for x in p.map(process_episodes, episode_chunks):
             for k in x.keys():
                 transition_data[k] = np.concatenate((transition_data[k], x[k]))
-
+    import  pdb; pdb.set_trace()
     with open(os.path.join(dataset_dir, 'symbolic_state_transitions.p'), 'wb') as transitions_file:
         pickle.dump(transition_data, transitions_file)
 
