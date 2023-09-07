@@ -83,7 +83,7 @@ def save_transitions(dataset_dir):
                        'next_observations': np.array([]),
                        'rewards': np.array([])}
     max_process = 32
-    episode_chunks = [(e_i, episodes[i:i + max_process]) for e_i,i in enumerate(range(0, len(episodes), max_process))]
+    episode_chunks = [(e_i, episodes[i:i + max_process]) for e_i,i in enumerate(range(0, len(episodes), len(episodes)//max_process))]
     with Pool(max_process) as p:
         for x in p.map(process_episodes, episode_chunks):
             for k in x.keys():
