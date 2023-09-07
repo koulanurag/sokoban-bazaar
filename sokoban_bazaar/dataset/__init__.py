@@ -31,52 +31,6 @@ def root_dir():
                           default=os.path.join(Path.home(), ".sokoban-datasets"))
 
 
-# def get_trajectories(env_name, dataset_name, dataset_size=None):
-#     if env_name not in _ENV_NAMES:
-#         raise ValueError()
-#     if dataset_name not in _DATASET_NAMES:
-#         raise ValueError()
-#
-#     if dataset_name in ['expert', 'random', 'expert-random']:
-#         episode_file_paths = []
-#         sub_dataset_names = dataset_name.split("-")
-#         weights = []
-#         for sub_dataset_name in sub_dataset_names:
-#             dataset_dir = os.path.join(root_dir(), env_name, 'tiny_rgb_array',
-#                                        sub_dataset_name)
-#             dataset_files = os.listdir(dataset_dir)
-#
-#             if dataset_size is None:
-#                 sub_dataset_size = len(dataset_files) // len(sub_dataset_names)
-#             else:
-#                 sub_dataset_size = dataset_size // len(sub_dataset_names)
-#
-#             episode_file_paths += [os.path.join(dataset_dir, file)
-#                                    for file in dataset_files[:sub_dataset_size]]
-#             weights += (np.ones(len(dataset_files[:sub_dataset_size]))
-#                        * 1 / len(dataset_files[:sub_dataset_size])).tolist()
-#     else:
-#         raise ValueError()
-#
-#     try:
-#         trajectories = []
-#         for file_path in tqdm(episode_file_paths):
-#             with open(os.path.join(file_path), "rb") as data_file:
-#                 episode = pickle.load(data_file)
-#             trajectories.append({k: np.array(v) for k, v in episode.items()})
-#
-#         with open(os.path.join(root_dir(),env_name, 'tiny_rgb_array',
-#                                dataset_name, 'trajectories.p'), 'wb') as trajectories_file:
-#             pickle.dump(trajectories, trajectories_file)
-#     except:
-#         import pdb; pdb.set_trace()
-#
-#     import sys;
-#     sys.exit(0)
-#     return Trajectories(episode_file_paths), \
-#         WeightedRandomSampler(weights, len(weights), replacement=True)
-
-# @profile
 def get_trajectories(env_name, dataset_name, dataset_size=None):
     if env_name not in _ENV_NAMES:
         raise ValueError()
@@ -108,6 +62,38 @@ def get_trajectories(env_name, dataset_name, dataset_size=None):
 
     return trajectories, \
         WeightedRandomSampler(weights, len(weights), replacement=True)
+
+def get_transitions(env_name, dataset_name, dataset_size=None):
+    if env_name not in _ENV_NAMES:
+        raise ValueError()
+    if dataset_name not in ['expert', 'random', 'expert-random']:
+        raise ValueError()
+
+    if dataset_name in ['expert', 'random', 'expert-random']:
+        transitions = []
+        sub_dataset_names = dataset_name.split("-")
+        weights = []
+        for sub_dataset_name in sub_dataset_names:
+            with open(os.path.join(root_dir(), env_name, 'tiny_rgb_array', sub_dataset_name, 'transitions.p'),
+                      'rb') as trajectories_file:
+
+                sub_dataset = pickle.load(trajectories_file)
+
+                # if dataset_size is None:
+                #     sub_dataset_size = len(sub_dataset) // len(sub_dataset_names)
+                # else:
+                #     sub_dataset_size = dataset_size // len(sub_dataset_names)
+                #
+                sub_dataset_size = len(sub_dataset)
+                transitions += sub_dataset[:sub_dataset_size]
+                weights += (np.ones(len(sub_dataset[:sub_dataset_size]))
+                            * 1 / len(sub_dataset[:sub_dataset_size])).tolist()
+    else:
+        raise ValueError()
+
+    return transitions, \
+        WeightedRandomSampler(weights, len(weights), replacement=True)
+
 
 
 def get_test_envs(env_name):

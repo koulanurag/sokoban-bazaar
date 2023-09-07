@@ -28,23 +28,19 @@ code:
 search:
   job_template:
     name: clean_dataset_test_set_{auto:3s}
-    sku: 1C1
-    sla_tier: basic  # [basic, standard, premium]
-    execution_mode: basic  # [basic, managed]
-    priority: high  # [low, medium, high]
+    sku: 8C1
     submit_args:
       env:
         { SOKOBAN_DATASET_ROOT_PATH: "/mnt/dt_sokoban/datasets/" }
     command:
-      - pip install -e .
-      - pip install -e ".[scripts]"
       - cd scripts
-      - python refactor_boxoban_dataset.py
-        --episode-start-idx {episode_start_idx}
-        --max-episodes 50000
+      - python save_trajectories.py
+        --dataset-dir /mnt/dt_sokoban/datasets/
+        --env-name gym_sokoban:Boxoban-Train-v0
+        --dataset-quality {dataset_quality}
   type: grid
   max_trials: 25001
   params:
-    - name: episode_start_idx
+    - name: dataset_quality
       spec: discrete
-      values: range(0,900000,50000)
+      values: ['random' ]

@@ -7,6 +7,26 @@ import os
 import random
 from pyperplan.planner import HEURISTICS, search_plan, SEARCHES
 
+OBJECT_NAME_TO_IDX = {'wall': 0,
+                      'floor': 1,
+                      'box_target': 2,
+                      'box_off_target': 3,
+                      'box_on_target': 4,
+                      'player_off_target': 5,
+                      "player_on_target": 6}
+
+OBJECT_IDX_TO_NAME = {v: k for k, v in OBJECT_NAME_TO_IDX.items()}
+
+OBJECT_NAME_TO_COLOR = {
+    "wall": (0, 0, 0),
+    "floor": (243, 248, 238),
+    "box_target": (254, 126, 125),
+    "box_off_target": (142, 121, 56),
+    "box_on_target": (254, 95, 56),
+    "player_off_target": (160, 212, 56),
+    "player_on_target": (219, 212, 56)
+}
+
 
 def symbolic_state(obs):
     height, width, channels = obs.shape
@@ -18,13 +38,7 @@ def symbolic_state(obs):
             'room_state': np.zeros(shape=(height, width), dtype=int),
             'true_state': np.zeros(shape=(height, width), dtype=int),
             'box_mapping': dict()}
-    _object_name_to_idx = {'wall': 0,
-                           'floor': 1,
-                           'box_target': 2,
-                           'box_off_target': 3,
-                           'box_on_target': 4,
-                           'player_off_target': 5,
-                           "player_on_target": 6}
+
     for row_i in range(height):
         for col_i in range(width):
             _object_color = tuple(obs[row_i, col_i, :])
@@ -44,25 +58,38 @@ def symbolic_state(obs):
             elif _object_color == (219, 212, 56):
                 _object_name = "player_on_target"
             else:
-                raise ValueError("only 'tiny_rgb_array' are supported")
+                raise ValueError(f"{_object_color}  not found \nonly 'tiny_rgb_array' are supported")
 
             _symbolic_obs[row_i][col_i] = _object_name
-            info['true_state'][row_i][col_i] = _object_name_to_idx[_object_name]
+            info['true_state'][row_i][col_i] = OBJECT_NAME_TO_IDX[_object_name]
 
             info['box_mapping'][(row_i, col_i)] = (row_i, col_i)
 
-            info['room_fixed'][row_i][col_i] = _object_name_to_idx[_object_name]
+            info['room_fixed'][row_i][col_i] = OBJECT_NAME_TO_IDX[_object_name]
             if _object_name in ['player_off_target',
                                 'player_on_target',
                                 'box_off_target',
                                 'box_on_target']:
-                info['room_fixed'][row_i][col_i] = _object_name_to_idx['floor']
+                info['room_fixed'][row_i][col_i] = OBJECT_NAME_TO_IDX['floor']
 
-            info['room_state'][row_i][col_i] = _object_name_to_idx[_object_name]
+            info['room_state'][row_i][col_i] = OBJECT_NAME_TO_IDX[_object_name]
             if _object_name in ['box_off_target']:
-                info['room_state'][row_i][col_i] = _object_name_to_idx['box_on_target']
+                info['room_state'][row_i][col_i] = OBJECT_NAME_TO_IDX['box_on_target']
 
     return np.array(_symbolic_obs), info
+
+
+def symbolic_state_to_tiny_rgb(symbolic_state):
+    assert symbolic_state.shape == (10,10)
+    img = np.zeros((10, 10, 3))
+    height, width = 10, 10
+    for row_i in range(height):
+        for col_i in range(width):
+            object_name = OBJECT_IDX_TO_NAME[symbolic_state[row_i][col_i]]
+            object_color = OBJECT_NAME_TO_COLOR[object_name]
+            img[row_i, col_i, :] = object_color
+
+    return img
 
 
 class PDDL:
@@ -305,7 +332,7 @@ if __name__ == "__main__":
 
         # task pddl formulation
         env.reset()
-        _symbolic_state,_ = symbolic_state(env.render("tiny_rgb_array"))
+        _symbolic_state, _ = symbolic_state(env.render("tiny_rgb_array"))
         pddl = PDDL(
             _symbolic_state,
             domain_pddl_path=os.path.join(os.getcwd(), "assets", "sokoban_domain.pddl"),

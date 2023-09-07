@@ -12,7 +12,6 @@ from collections import defaultdict
 from sokoban_bazaar.solver import PDDL, symbolic_state
 import random
 import pickle
-from sokoban_bazaar.dataset import get_dataset
 
 
 def generate_offline_dataset(
@@ -209,6 +208,8 @@ def __main():
         episode_start_idx=args.episode_start_idx,
         source_file_idx=args.source_file_idx,
     )
+
+
 
     # log to file
     print(f"Data generated and stored at {dataset_dir}")
