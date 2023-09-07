@@ -6,30 +6,39 @@ import argparse
 from pathlib import Path
 
 
-def load_pickle_with_progress(pickle_file):
+def load_pickle_with_progress(pickle_file, chunk_size=1024*1024*1024):  # Chunk size set to 1MB
     file_size = os.path.getsize(pickle_file)
 
     with open(pickle_file, 'rb') as file:
         with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
-            while True:
-                data = file.read(1024)
-                if not data:
-                    break
-                pbar.update(len(data))
-                yield data
+            try:
+                while True:
+                    data = file.read(chunk_size)
+                    if not data:
+                        break
+                    pbar.update(len(data))
+                    yield data
+            except KeyboardInterrupt:
+                pbar.close()
+                print("Loading interrupted by user.")
+                exit(1)
+            except Exception as e:
+                pbar.close()
+                print(f"An error occurred: {str(e)}")
+                exit(1)
 
 
 def save_transitions(dataset_dir):
     use_symbolic_state = True
     print('loading data')
 
-    # loaded_data = b''
-    # for chunk in load_pickle_with_progress(os.path.join(dataset_dir, 'trajectories.p')):
-    #     loaded_data += chunk
-    # episodes = pickle.loads(loaded_data)
+    loaded_data = b''
+    for chunk in load_pickle_with_progress(os.path.join(dataset_dir, 'trajectories.p'),chunk_size=1024*1024*1024 ):
+        loaded_data += chunk
+    episodes = pickle.loads(loaded_data)
 
-    with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
-        episodes = pickle.load(trajectories_file)
+    # with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
+    #     episodes = pickle.load(trajectories_file)
 
     print('data loaded ')
     for episode_i, episode in enumerate(tqdm(episodes, desc="Transition Dataset Processing:")):
