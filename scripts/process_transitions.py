@@ -5,10 +5,6 @@ from tqdm import tqdm
 import argparse
 from pathlib import Path
 
-with open('file_list.txt', 'r') as files:
-    processed_files = {k: None for k in files.read().split(", ")}
-
-from multiprocessing import Pool
 
 
 def process_files(file_paths):
