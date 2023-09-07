@@ -17,18 +17,18 @@ def process_files(file_paths):
     for file_path in tqdm(file_paths, desc=f"{id}"):
         file_path = os.path.join(dataset_dir, file_path)
         if 'episode' in file_path:
-            try:
-                with open(file_path, 'rb') as _file:
-                    episode = pickle.load(_file)
-                    trajectories.append({'observations': np.array(episode['observations']),
-                                         'actions': np.array(episode['actions']).astype(np.int8),
-                                         'rewards': np.array(episode['rewards']).astype(np.float32),
-                                         'dones': np.array(episode['dones']),
-                                         'timesteps': np.array(episode['timesteps']).astype(np.uint16),
-                                         'symbolic_state': np.array(episode['symbolic_state']).astype(np.uint8),
-                                         'returns_to_go': np.array(episode['returns_to_go']).astype(np.float32)})
-            except:
-                os.remove(file_path)
+            # try:
+            with open(file_path, 'rb') as _file:
+                episode = pickle.load(_file)
+                trajectories.append({'observations': np.array(episode['observations']),
+                                     'actions': np.array(episode['actions']).astype(np.int8),
+                                     'rewards': np.array(episode['rewards']).astype(np.float32),
+                                     'dones': np.array(episode['dones']),
+                                     'timesteps': np.array(episode['timesteps']).astype(np.uint16),
+                                     'symbolic_state': np.array(episode['symbolic_state']).astype(np.uint8),
+                                     'returns_to_go': np.array(episode['returns_to_go']).astype(np.float32)})
+            # except:
+            #     os.remove(file_path)
     return trajectories
 
 
