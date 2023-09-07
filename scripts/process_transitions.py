@@ -4,9 +4,25 @@ import numpy as np
 from tqdm import tqdm
 import argparse
 from pathlib import Path
+from multiprocessing import Pool
 
 
-def load_pickle_with_progress(pickle_file, chunk_size=1024*1024*1024):  # Chunk size set to 1MB
+def chunk_list(lst, n):
+    # Calculate the size of each chunk
+    chunk_size = len(lst) // n
+    remainder = len(lst) % n
+
+    # Create chunks
+    chunks = [(i, lst[i * chunk_size:(i + 1) * chunk_size]) for i in range(n)]
+
+    # Distribute the remainder elements evenly among the chunks
+    for i in range(remainder):
+        chunks[i][1].append(lst[n * chunk_size + i])
+
+    return chunks
+
+
+def load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024):  # Chunk size set to 1MB
     file_size = os.path.getsize(pickle_file)
 
     with open(pickle_file, 'rb') as file:
@@ -28,20 +44,10 @@ def load_pickle_with_progress(pickle_file, chunk_size=1024*1024*1024):  # Chunk 
                 exit(1)
 
 
-def save_transitions(dataset_dir):
+def process_episodes(episodes):
+    idx, episodes = episodes
     use_symbolic_state = True
-    print('loading data')
-
-    loaded_data = b''
-    for chunk in load_pickle_with_progress(os.path.join(dataset_dir, 'trajectories.p'),chunk_size=1024*1024*1024 ):
-        loaded_data += chunk
-    episodes = pickle.loads(loaded_data)
-
-    # with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
-    #     episodes = pickle.load(trajectories_file)
-
-    print('data loaded ')
-    for episode_i, episode in enumerate(tqdm(episodes, desc="Transition Dataset Processing:")):
+    for episode_i, episode in enumerate(tqdm(episodes, desc=f"#{idx}  Processing:")):
         obs_key = 'symbolic_state' if use_symbolic_state else 'observations'
 
         if episode_i > 0:
@@ -54,12 +60,37 @@ def save_transitions(dataset_dir):
             observations = episode[obs_key][:-1]
             next_observations = episode[obs_key][1:]
             rewards = episode['rewards']
+    return {'actions': actions,
+            'observations': observations,
+            'next_observations': next_observations,
+            'rewards': rewards}
+
+
+def save_transitions(dataset_dir):
+    print('loading data')
+
+    loaded_data = b''
+    for chunk in load_pickle_with_progress(os.path.join(dataset_dir, 'trajectories.p'), chunk_size=1024 * 1024 * 1024):
+        loaded_data += chunk
+    episodes = pickle.loads(loaded_data)
+
+    # with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
+    #     episodes = pickle.load(trajectories_file)
+
+    print('data loaded ')
+    transition_data = {'actions': np.array([]),
+                       'observations': np.array([]),
+                       'next_observations': np.array([]),
+                       'rewards': np.array([])}
+    max_process = 32
+    episode_chunks = [(i, episodes[i:i + max_process]) for i in range(0, len(episodes), max_process)]
+    with Pool(max_process) as p:
+        for x in p.map(process_episodes, episode_chunks):
+            for k in x.keys():
+                transition_data[k] = np.concatenate((transition_data[k], x[k]))
 
     with open(os.path.join(dataset_dir, 'symbolic_state_transitions.p'), 'wb') as transitions_file:
-        pickle.dump({'actions': actions,
-                     'observations': observations,
-                     'next_observations': next_observations,
-                     'rewards': rewards}, transitions_file)
+        pickle.dump(transition_data, transitions_file)
 
 
 def get_args():

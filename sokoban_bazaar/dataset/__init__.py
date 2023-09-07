@@ -31,7 +31,36 @@ def root_dir():
                           default=os.path.join(Path.home(), ".sokoban-datasets"))
 
 
-def get_trajectories(env_name, dataset_name, dataset_size=None):
+def _load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024):  # Chunk size set to 1MB
+    file_size = os.path.getsize(pickle_file)
+
+    with open(pickle_file, 'rb') as file:
+        with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
+            try:
+                while True:
+                    data = file.read(chunk_size)
+                    if not data:
+                        break
+                    pbar.update(len(data))
+                    yield data
+            except KeyboardInterrupt:
+                pbar.close()
+                print("Loading interrupted by user.")
+                exit(1)
+            except Exception as e:
+                pbar.close()
+                print(f"An error occurred: {str(e)}")
+                exit(1)
+
+
+def load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024):
+    loaded_data = b''
+    for chunk in load_pickle_with_progress(pickle_file, chunk_size):
+        loaded_data += chunk
+    return pickle.loads(loaded_data)
+
+
+def get_trajectories(env_name, dataset_name, dataset_size=None, chunk_size=1024 ** 3):
     if env_name not in _ENV_NAMES:
         raise ValueError()
     if dataset_name not in ['expert', 'random', 'expert-random']:
@@ -42,28 +71,28 @@ def get_trajectories(env_name, dataset_name, dataset_size=None):
         sub_dataset_names = dataset_name.split("-")
         weights = []
         for sub_dataset_name in sub_dataset_names:
-            with open(os.path.join(root_dir(), env_name,
-                                   'tiny_rgb_array', sub_dataset_name, 'trajectories.p'),
-                      'rb') as trajectories_file:
+            _trajectories_path = os.path.join(root_dir(), env_name,
+                                              'tiny_rgb_array', sub_dataset_name, 'trajectories.p')
+            sub_dataset = load_pickle_with_progress(_trajectories_path, chunk_size=chunk_size,
+                                                    desc=f"Loading Dataset {sub_dataset_name}")
 
-                sub_dataset = pickle.load(trajectories_file)
-
-                # if dataset_size is None:
-                #     sub_dataset_size = len(sub_dataset) // len(sub_dataset_names)
-                # else:
-                #     sub_dataset_size = dataset_size // len(sub_dataset_names)
-                #
-                sub_dataset_size = len(sub_dataset)
-                trajectories += sub_dataset[:sub_dataset_size]
-                weights += (np.ones(len(sub_dataset[:sub_dataset_size]))
-                            * 1 / len(sub_dataset[:sub_dataset_size])).tolist()
+            # if dataset_size is None:
+            #     sub_dataset_size = len(sub_dataset) // len(sub_dataset_names)
+            # else:
+            #     sub_dataset_size = dataset_size // len(sub_dataset_names)
+            #
+            sub_dataset_size = len(sub_dataset)
+            trajectories += sub_dataset[:sub_dataset_size]
+            weights += (np.ones(len(sub_dataset[:sub_dataset_size]))
+                        * 1 / len(sub_dataset[:sub_dataset_size])).tolist()
     else:
         raise ValueError()
 
     return trajectories, \
         WeightedRandomSampler(weights, len(weights), replacement=True)
 
-def get_transitions(env_name, dataset_name, dataset_size=None):
+
+def get_transitions(env_name, dataset_name, dataset_size=None, chunk_size=1024 ** 3):
     if env_name not in _ENV_NAMES:
         raise ValueError()
     if dataset_name not in ['expert', 'random', 'expert-random']:
@@ -74,26 +103,25 @@ def get_transitions(env_name, dataset_name, dataset_size=None):
         sub_dataset_names = dataset_name.split("-")
         weights = []
         for sub_dataset_name in sub_dataset_names:
-            with open(os.path.join(root_dir(), env_name, 'tiny_rgb_array', sub_dataset_name, 'transitions.p'),
-                      'rb') as trajectories_file:
+            _trajectories_path = os.path.join(root_dir(), env_name,
+                                              'tiny_rgb_array', sub_dataset_name, 'trajectories.p')
+            sub_dataset = load_pickle_with_progress(_trajectories_path, chunk_size=chunk_size,
+                                                    desc=f"Loading Dataset {sub_dataset_name}")
 
-                sub_dataset = pickle.load(trajectories_file)
-
-                # if dataset_size is None:
-                #     sub_dataset_size = len(sub_dataset) // len(sub_dataset_names)
-                # else:
-                #     sub_dataset_size = dataset_size // len(sub_dataset_names)
-                #
-                sub_dataset_size = len(sub_dataset)
-                transitions += sub_dataset[:sub_dataset_size]
-                weights += (np.ones(len(sub_dataset[:sub_dataset_size]))
-                            * 1 / len(sub_dataset[:sub_dataset_size])).tolist()
+            # if dataset_size is None:
+            #     sub_dataset_size = len(sub_dataset) // len(sub_dataset_names)
+            # else:
+            #     sub_dataset_size = dataset_size // len(sub_dataset_names)
+            #
+            sub_dataset_size = len(sub_dataset)
+            transitions += sub_dataset[:sub_dataset_size]
+            weights += (np.ones(len(sub_dataset[:sub_dataset_size]))
+                        * 1 / len(sub_dataset[:sub_dataset_size])).tolist()
     else:
         raise ValueError()
 
     return transitions, \
         WeightedRandomSampler(weights, len(weights), replacement=True)
-
 
 
 def get_test_envs(env_name):
