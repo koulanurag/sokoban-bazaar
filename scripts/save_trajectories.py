@@ -38,10 +38,11 @@ def save_trajectories(dataset_dir):
 
     trajectories = []
 
-    chunk_size = len(episode_files) // 5
+    max_processes = 10
+    chunk_size = len(episode_files) // max_processes
     episode_file_chunks = [(dataset_dir, id, episode_files[i:i + chunk_size])
                            for id, i in enumerate(range(0, len(episode_files), chunk_size))]
-    with Pool(5) as p:
+    with Pool(max_processes) as p:
         for x in p.map(process_files, episode_file_chunks):
             trajectories += x
 
