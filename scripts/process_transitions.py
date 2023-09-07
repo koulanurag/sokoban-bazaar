@@ -24,10 +24,12 @@ def process_files(file_paths):
 
 def save_transitions(dataset_dir):
     use_symbolic_state = True
+    print('loading data')
     with open(os.path.join(dataset_dir, 'trajectories.p'), 'rb') as trajectories_file:
         episodes = pickle.load(trajectories_file)
 
-    for episode_i, episode in enumerate(tqdm(episodes), desc="Transition Dataset Processing:"):
+    print('data loaded ')
+    for episode_i, episode in enumerate(tqdm(episodes, desc="Transition Dataset Processing:")):
         obs_key = 'symbolic_state' if use_symbolic_state else 'observations'
 
         if episode_i > 0:
