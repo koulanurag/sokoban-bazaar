@@ -6,101 +6,75 @@ import argparse
 from pathlib import Path
 from multiprocessing import Pool
 
-
-def chunk_list(lst, n):
-    # Calculate the size of each chunk
-    chunk_size = len(lst) // n
-    remainder = len(lst) % n
-
-    # Create chunks
-    chunks = [(i, lst[i * chunk_size:(i + 1) * chunk_size]) for i in range(n)]
-
-    # Distribute the remainder elements evenly among the chunks
-    for i in range(remainder):
-        chunks[i][1].append(lst[n * chunk_size + i])
-
-    return chunks
+from collections import defaultdict
 
 
-def load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024):  # Chunk size set to 1MB
-    file_size = os.path.getsize(pickle_file)
+def process_files(file_paths):
+    dataset_dir, id, file_paths = file_paths
+    transition_data = defaultdict(lambda: None)
+    for file_path in tqdm(file_paths, desc=f"{id}"):
+        file_path = os.path.join(dataset_dir, file_path)
+        if 'episode' in file_path:
+            with open(file_path, 'rb') as _file:
+                episode = pickle.load(_file)
 
-    with open(pickle_file, 'rb') as file:
-        with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
-            try:
-                while True:
-                    data = file.read(chunk_size)
-                    if not data:
-                        break
-                    pbar.update(len(data))
-                    yield data
-            except KeyboardInterrupt:
-                pbar.close()
-                print("Loading interrupted by user.")
-                exit(1)
-            except Exception as e:
-                pbar.close()
-                print(f"An error occurred: {str(e)}")
-                exit(1)
+                episode = {'observations': np.array(episode['observations']),
+                           'actions': np.array(episode['actions']).astype(np.int8),
+                           'rewards': np.array(episode['rewards']).astype(np.float32),
+                           'dones': np.array(episode['dones']),
+                           'timesteps': np.array(episode['timesteps']).astype(np.uint16),
+                           'symbolic_state': np.array(episode['symbolic_state']).astype(np.uint8),
+                           'returns_to_go': np.array(episode['returns_to_go']).astype(np.float32)}
 
+                for k in episode.keys():
+                    if transition_data[k] is None:
+                        if k in ['observations', 'symbolic_state']:
+                            transition_data[k] = episode[k][:-1]
+                            transition_data[f"next_{k}"] = episode[k][1:]
+                        else:
+                            transition_data[k] = episode[k]
+                    else:
+                        if k in ['observations', 'symbolic_state']:
+                            transition_data[k] = np.concatenate((transition_data[k], episode[k][:-1]))
+                            transition_data[f"next_{k}"] = np.concatenate((transition_data[k], episode[k][1:]))
+                        else:
+                            transition_data[k] = np.concatenate((transition_data[k], episode[k]))
 
-def process_episodes(episodes):
-    idx, episodes = episodes
-    use_symbolic_state = True
-    for episode_i, episode in enumerate(tqdm(episodes, desc=f"#{idx}  Processing:")):
-        obs_key = 'symbolic_state' if use_symbolic_state else 'observations'
-
-        episode['actions'] = episode['actions'].astype(np.int8)
-        episode[obs_key] = episode[obs_key].astype(np.int8)
-        episode['rewards'] = episode['rewards'].astype(np.float32)
-
-        if episode_i > 0:
-            actions = np.concatenate((actions, episode['actions']))
-            observations = np.concatenate((observations, episode[obs_key][:-1]))
-            next_observations = np.concatenate((next_observations, episode[obs_key][1:]))
-            rewards = np.concatenate((rewards, episode['rewards']))
-        else:
-            actions = episode['actions']
-            observations = episode[obs_key][:-1]
-            next_observations = episode[obs_key][1:]
-            rewards = episode['rewards']
-    return {'actions': actions,
-            'observations': observations,
-            'next_observations': next_observations,
-            'rewards': rewards}
+    return transition_data
 
 
 def save_transitions(dataset_dir):
-    print('loading data')
+    episode_files = os.listdir(dataset_dir)
+    episode_files = episode_files[:len(episode_files) // 2]
 
-    loaded_data = b''
-    for chunk in load_pickle_with_progress(os.path.join(dataset_dir, 'trajectories.p'), chunk_size=1024 * 1024 * 1024):
-        loaded_data += chunk
-    episodes = pickle.loads(loaded_data)
+    transition_data = defaultdict(lambda: None)
 
-    print('data loaded ')
-    transition_data = {'actions': None,
-                       'observations': None,
-                       'next_observations': None,
-                       'rewards': None}
-    max_process = 8
-    chunk_size = len(episodes) // max_process
-    episode_chunks = [(e_i, episodes[i:i + chunk_size]) for e_i, i in
-                      enumerate(range(0, len(episodes), chunk_size))]
-    with Pool(max_process) as p:
-        for x in p.map(process_episodes, episode_chunks):
-            for k in x.keys():
+    max_processes = 10
+    chunk_size = len(episode_files) // max_processes
+    episode_file_chunks = [(dataset_dir, id, episode_files[i:i + chunk_size])
+                           for id, i in enumerate(range(0, len(episode_files), chunk_size))]
+    with Pool(max_processes) as p:
+        for transition_data_chunk in p.map(process_files, episode_file_chunks):
+            for k in transition_data_chunk.keys():
                 if transition_data[k] is None:
-                    transition_data[k] = x[k]
+                    if k in ['observations', 'symbolic_state']:
+                        transition_data[k] = transition_data_chunk[k][:-1]
+                        transition_data[f"next_{k}"] = transition_data_chunk[k][1:]
+                    else:
+                        transition_data[k] = transition_data_chunk[k]
                 else:
-                    transition_data[k] = np.concatenate((transition_data[k], x[k]))
+                    if k in ['observations', 'symbolic_state']:
+                        transition_data[k] = np.concatenate((transition_data[k], transition_data_chunk[k][:-1]))
+                        transition_data[f"next_{k}"] = np.concatenate(
+                            (transition_data[k], transition_data_chunk[k][1:]))
+                    else:
+                        transition_data[k] = np.concatenate((transition_data[k], transition_data_chunk[k]))
 
-    transition_data['actions'] = transition_data['actions'].astype(np.int8)
-    transition_data['observations'] = transition_data['observations'].astype(np.int8)
-    transition_data['next_observations'] = transition_data['next_observations'].astype(np.int8)
-    transition_data['rewards'] = transition_data['rewards'].astype(np.float32)
-    with open(os.path.join(dataset_dir, 'symbolic_state_transitions.p'), 'wb') as transitions_file:
+    with open(os.path.join(dataset_dir, 'transitions.p'), 'wb') as transitions_file:
         pickle.dump(transition_data, transitions_file)
+
+    with open(os.path.join(dataset_dir, 'transitions.p'), 'rb') as transitions_file:
+        pickle.load(transitions_file)
 
 
 def get_args():
@@ -141,7 +115,7 @@ def get_args():
     )
     data_generation_args.add_argument(
         "--dataset-quality",
-        default="random",
+        default="expert",
         type=str,
         help="max number steps for data collection",
         choices=[
