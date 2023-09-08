@@ -36,11 +36,11 @@ def process_files(file_paths):
                     else:
                         if k in ['observations', 'symbolic_state']:
                             transition_data[k] = np.concatenate((transition_data[k], episode[k][:-1]))
-                            transition_data[f"next_{k}"] = np.concatenate((transition_data[k], episode[k][1:]))
+                            transition_data[f"next_{k}"] = np.concatenate((transition_data[f"next_{k}"], episode[k][1:]))
                         else:
                             transition_data[k] = np.concatenate((transition_data[k], episode[k]))
 
-    return transition_data
+    return {k: v for k, v in transition_data.items()}
 
 
 def save_transitions(dataset_dir):
@@ -51,25 +51,17 @@ def save_transitions(dataset_dir):
 
     max_processes = 10
     chunk_size = len(episode_files) // max_processes
-    episode_file_chunks = [(dataset_dir, id, episode_files[i:i + chunk_size])
+    episode_file_chunks = [(dataset_dir, id, episode_files[i:i + 5])
                            for id, i in enumerate(range(0, len(episode_files), chunk_size))]
     with Pool(max_processes) as p:
         for transition_data_chunk in p.map(process_files, episode_file_chunks):
             for k in transition_data_chunk.keys():
                 if transition_data[k] is None:
-                    if k in ['observations', 'symbolic_state']:
-                        transition_data[k] = transition_data_chunk[k][:-1]
-                        transition_data[f"next_{k}"] = transition_data_chunk[k][1:]
-                    else:
-                        transition_data[k] = transition_data_chunk[k]
+                    transition_data[k] = transition_data_chunk[k]
                 else:
-                    if k in ['observations', 'symbolic_state']:
-                        transition_data[k] = np.concatenate((transition_data[k], transition_data_chunk[k][:-1]))
-                        transition_data[f"next_{k}"] = np.concatenate(
-                            (transition_data[k], transition_data_chunk[k][1:]))
-                    else:
-                        transition_data[k] = np.concatenate((transition_data[k], transition_data_chunk[k]))
+                    transition_data[k] = np.concatenate((transition_data[k], transition_data_chunk[k]))
 
+    transition_data = {k: v for k, v in transition_data.items()}
     with open(os.path.join(dataset_dir, 'transitions.p'), 'wb') as transitions_file:
         pickle.dump(transition_data, transitions_file)
 
