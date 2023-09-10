@@ -4,6 +4,7 @@ from ..utils import set_state
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from gym_sokoban.envs import SokobanEnv
 from tqdm import tqdm
+from collections import defaultdict
 
 _ENV_NAMES = [
     # "gym_sokoban:Sokoban-small-v0",
@@ -31,11 +32,11 @@ def root_dir():
                           default=os.path.join(Path.home(), ".sokoban-datasets"))
 
 
-def _load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024):  # Chunk size set to 1MB
+def _load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024, desc=None):  # Chunk size set to 1MB
     file_size = os.path.getsize(pickle_file)
 
     with open(pickle_file, 'rb') as file:
-        with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
+        with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024, desc=desc) as pbar:
             try:
                 while True:
                     data = file.read(chunk_size)
@@ -53,9 +54,9 @@ def _load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024):  # C
                 exit(1)
 
 
-def load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024):
+def load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024, desc=None):
     loaded_data = b''
-    for chunk in load_pickle_with_progress(pickle_file, chunk_size):
+    for chunk in _load_pickle_with_progress(pickle_file, chunk_size, desc):
         loaded_data += chunk
     return pickle.loads(loaded_data)
 
@@ -72,7 +73,7 @@ def get_trajectories(env_name, dataset_name, dataset_size=None, chunk_size=1024 
         weights = []
         for sub_dataset_name in sub_dataset_names:
             _trajectories_path = os.path.join(root_dir(), env_name,
-                                              'tiny_rgb_array', sub_dataset_name, 'trajectories.p')
+                                              'tiny_rgb_array', sub_dataset_name, 'transitions.p')
             sub_dataset = load_pickle_with_progress(_trajectories_path, chunk_size=chunk_size,
                                                     desc=f"Loading Dataset {sub_dataset_name}")
 
@@ -99,24 +100,24 @@ def get_transitions(env_name, dataset_name, dataset_size=None, chunk_size=1024 *
         raise ValueError()
 
     if dataset_name in ['expert', 'random', 'expert-random']:
-        transitions = []
+        transitions = defaultdict(lambda: None)
         sub_dataset_names = dataset_name.split("-")
         weights = []
         for sub_dataset_name in sub_dataset_names:
             _trajectories_path = os.path.join(root_dir(), env_name,
-                                              'tiny_rgb_array', sub_dataset_name, 'trajectories.p')
+                                              'tiny_rgb_array', sub_dataset_name, 'transitions.p')
             sub_dataset = load_pickle_with_progress(_trajectories_path, chunk_size=chunk_size,
                                                     desc=f"Loading Dataset {sub_dataset_name}")
+            sub_dataset_size = len(sub_dataset['actions'])
 
-            # if dataset_size is None:
-            #     sub_dataset_size = len(sub_dataset) // len(sub_dataset_names)
-            # else:
-            #     sub_dataset_size = dataset_size // len(sub_dataset_names)
-            #
-            sub_dataset_size = len(sub_dataset)
-            transitions += sub_dataset[:sub_dataset_size]
-            weights += (np.ones(len(sub_dataset[:sub_dataset_size]))
-                        * 1 / len(sub_dataset[:sub_dataset_size])).tolist()
+            for k, v in sub_dataset.items():
+                if transitions[k] is None:
+                    transitions[k] = v[:sub_dataset_size]
+                else:
+                    transitions[k] = np.concatenate((transitions[k],
+                                                     v[:sub_dataset_size]))
+            weights += (np.ones(len(sub_dataset['actions'][:sub_dataset_size]))
+                        * 1 / len(sub_dataset['actions'][:sub_dataset_size])).tolist()
     else:
         raise ValueError()
 

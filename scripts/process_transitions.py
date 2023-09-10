@@ -36,7 +36,8 @@ def process_files(file_paths):
                     else:
                         if k in ['observations', 'symbolic_state']:
                             transition_data[k] = np.concatenate((transition_data[k], episode[k][:-1]))
-                            transition_data[f"next_{k}"] = np.concatenate((transition_data[f"next_{k}"], episode[k][1:]))
+                            transition_data[f"next_{k}"] = np.concatenate(
+                                (transition_data[f"next_{k}"], episode[k][1:]))
                         else:
                             transition_data[k] = np.concatenate((transition_data[k], episode[k]))
 
@@ -45,8 +46,9 @@ def process_files(file_paths):
 
 def save_transitions(dataset_dir):
     episode_files = os.listdir(dataset_dir)
-    episode_files = episode_files[:len(episode_files) // 2]
-
+    # episode_files = episode_files[:len(episode_files) // 2]
+    if 'random' in dataset_dir:
+        episode_files = episode_files[:100000]
     transition_data = defaultdict(lambda: None)
 
     max_processes = 10
@@ -67,7 +69,6 @@ def save_transitions(dataset_dir):
 
     with open(os.path.join(dataset_dir, 'transitions.p'), 'rb') as transitions_file:
         pickle.load(transitions_file)
-
 
 
 def get_args():
