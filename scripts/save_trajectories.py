@@ -32,7 +32,9 @@ def process_files(file_paths):
 
 def save_trajectories(dataset_dir):
     episode_files = os.listdir(dataset_dir)
-    episode_files = episode_files[:len(episode_files) // 2]
+    # episode_files = episode_files[:len(episode_files) // 2]
+    if 'random' in dataset_dir:
+        episode_files = episode_files[:100000]
 
     trajectories = []
 
