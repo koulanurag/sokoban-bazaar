@@ -16,15 +16,15 @@ from sokoban_bazaar.dataset import get_dataset
 
 
 def generate_offline_dataset(
-        env,
-        domain_pddl_path,
-        dataset_quality,
-        env_observation_mode,
-        dataset_dir,
-        max_episodes=1,
-        episode_start_idx=0,
-        is_boxban=False,
-        source_file=None,
+    env,
+    domain_pddl_path,
+    dataset_quality,
+    env_observation_mode,
+    dataset_dir,
+    max_episodes=1,
+    episode_start_idx=0,
+    is_boxban=False,
+    source_file=None,
 ):
     total_step_count = 0
     done = True
@@ -36,7 +36,6 @@ def generate_offline_dataset(
 
     with tqdm(total=max_episodes) as pbar:
         while episode_count < max_episodes:
-
             # ##########################################################################
             # Reset episode
             # ##########################################################################
@@ -44,8 +43,10 @@ def generate_offline_dataset(
                 episode_step_i = 0
                 episode_info = defaultdict(lambda: [])
                 if is_boxban:
-                    env.reset(source_file=source_file,
-                              map_idx=episode_start_idx + episode_count)
+                    env.reset(
+                        source_file=source_file,
+                        map_idx=episode_start_idx + episode_count,
+                    )
                 else:
                     env.reset()
                 obs_img = env.render(mode=env_observation_mode)
@@ -65,9 +66,9 @@ def generate_offline_dataset(
             # ##########################################################################
             # Step into environment
             # ##########################################################################
-            if dataset_quality == 'expert':
+            if dataset_quality == "expert":
                 action = plan.pop(0)  # pop action to be executed
-            elif dataset_quality == 'random':
+            elif dataset_quality == "random":
                 action = env.action_space.sample()
             else:
                 raise ValueError()
@@ -103,10 +104,12 @@ def generate_offline_dataset(
 
                 pickle.dump(
                     dict(episode_info),
-                    open(os.path.join(
-                        dataset_dir,
-                        f"episode_{episode_start_idx + episode_count}.p"),
-                        "wb"
+                    open(
+                        os.path.join(
+                            dataset_dir,
+                            f"episode_{episode_start_idx + episode_count}.p",
+                        ),
+                        "wb",
                     ),
                 )
                 episode_count += 1
@@ -130,8 +133,7 @@ def get_args():
         help="job to be performed",
     )
     parser.add_argument(
-        "--dataset-dir",
-        default=os.path.join(Path.home(), ".sokoban-datasets")
+        "--dataset-dir", default=os.path.join(Path.home(), ".sokoban-datasets")
     )
 
     # env-args
@@ -169,10 +171,7 @@ def get_args():
         default="expert",
         type=str,
         help="max number steps for data collection",
-        choices=[
-            "expert",
-            "random"
-        ],
+        choices=["expert", "random"],
     )
     data_generation_args.add_argument(
         "--episode-start-idx",
@@ -191,8 +190,9 @@ def __main():
     args = get_args()
 
     env = gym.make(args.env_name)
-    dataset_dir = os.path.join(args.dataset_dir, args.env_name,
-                               args.env_observation_mode, args.dataset_quality)
+    dataset_dir = os.path.join(
+        args.dataset_dir, args.env_name, args.env_observation_mode, args.dataset_quality
+    )
 
     os.makedirs(dataset_dir, exist_ok=True)
     generate_offline_dataset(
@@ -209,5 +209,5 @@ def __main():
     print(f"Data generated and stored at {dataset_dir}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     __main()

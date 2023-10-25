@@ -7,13 +7,15 @@ import os
 import random
 from pyperplan.planner import HEURISTICS, search_plan, SEARCHES
 
-OBJECT_NAME_TO_IDX = {'wall': 0,
-                      'floor': 1,
-                      'box_target': 2,
-                      'box_off_target': 3,
-                      'box_on_target': 4,
-                      'player_off_target': 5,
-                      "player_on_target": 6}
+OBJECT_NAME_TO_IDX = {
+    "wall": 0,
+    "floor": 1,
+    "box_target": 2,
+    "box_off_target": 3,
+    "box_on_target": 4,
+    "player_off_target": 5,
+    "player_on_target": 6,
+}
 
 OBJECT_IDX_TO_NAME = {v: k for k, v in OBJECT_NAME_TO_IDX.items()}
 
@@ -24,7 +26,7 @@ OBJECT_NAME_TO_COLOR = {
     "box_off_target": (142, 121, 56),
     "box_on_target": (254, 95, 56),
     "player_off_target": (160, 212, 56),
-    "player_on_target": (219, 212, 56)
+    "player_on_target": (219, 212, 56),
 }
 
 
@@ -34,10 +36,12 @@ def symbolic_state(obs):
 
     # Room fixed: represents all not movable parts of the room
     # Room structure: represents the current state of the room including movable parts
-    info = {'room_fixed': np.zeros(shape=(height, width), dtype=int),
-            'room_state': np.zeros(shape=(height, width), dtype=int),
-            'true_state': np.zeros(shape=(height, width), dtype=int),
-            'box_mapping': dict()}
+    info = {
+        "room_fixed": np.zeros(shape=(height, width), dtype=int),
+        "room_state": np.zeros(shape=(height, width), dtype=int),
+        "true_state": np.zeros(shape=(height, width), dtype=int),
+        "box_mapping": dict(),
+    }
 
     for row_i in range(height):
         for col_i in range(width):
@@ -58,29 +62,33 @@ def symbolic_state(obs):
             elif _object_color == (219, 212, 56):
                 _object_name = "player_on_target"
             else:
-                raise ValueError(f"{_object_color}  not found \nonly 'tiny_rgb_array' are supported")
+                raise ValueError(
+                    f"{_object_color}  not found \nonly 'tiny_rgb_array' are supported"
+                )
 
             _symbolic_obs[row_i][col_i] = _object_name
-            info['true_state'][row_i][col_i] = OBJECT_NAME_TO_IDX[_object_name]
+            info["true_state"][row_i][col_i] = OBJECT_NAME_TO_IDX[_object_name]
 
-            info['box_mapping'][(row_i, col_i)] = (row_i, col_i)
+            info["box_mapping"][(row_i, col_i)] = (row_i, col_i)
 
-            info['room_fixed'][row_i][col_i] = OBJECT_NAME_TO_IDX[_object_name]
-            if _object_name in ['player_off_target',
-                                'player_on_target',
-                                'box_off_target',
-                                'box_on_target']:
-                info['room_fixed'][row_i][col_i] = OBJECT_NAME_TO_IDX['floor']
+            info["room_fixed"][row_i][col_i] = OBJECT_NAME_TO_IDX[_object_name]
+            if _object_name in [
+                "player_off_target",
+                "player_on_target",
+                "box_off_target",
+                "box_on_target",
+            ]:
+                info["room_fixed"][row_i][col_i] = OBJECT_NAME_TO_IDX["floor"]
 
-            info['room_state'][row_i][col_i] = OBJECT_NAME_TO_IDX[_object_name]
-            if _object_name in ['box_off_target']:
-                info['room_state'][row_i][col_i] = OBJECT_NAME_TO_IDX['box_on_target']
+            info["room_state"][row_i][col_i] = OBJECT_NAME_TO_IDX[_object_name]
+            if _object_name in ["box_off_target"]:
+                info["room_state"][row_i][col_i] = OBJECT_NAME_TO_IDX["box_on_target"]
 
     return np.array(_symbolic_obs), info
 
 
 def symbolic_state_to_tiny_rgb(symbolic_state):
-    assert symbolic_state.shape == (10,10)
+    assert symbolic_state.shape == (10, 10)
     img = np.zeros((10, 10, 3))
     height, width = 10, 10
     for row_i in range(height):
@@ -182,11 +190,11 @@ class PDDL:
 
                 # clear specification
                 if (
-                        symbolic_obs[row][col] != "wall"
-                        and symbolic_obs[row][col] != "player_off_target"
-                        and symbolic_obs[row][col] != "player_on_target"
-                        and symbolic_obs[row][col] != "box_off_target"
-                        and symbolic_obs[row][col] != "box_on_target"
+                    symbolic_obs[row][col] != "wall"
+                    and symbolic_obs[row][col] != "player_off_target"
+                    and symbolic_obs[row][col] != "player_on_target"
+                    and symbolic_obs[row][col] != "box_off_target"
+                    and symbolic_obs[row][col] != "box_on_target"
                 ):
                     clear.append(f"clear pos-{col + 1}-{row + 1}")
 
@@ -195,25 +203,25 @@ class PDDL:
                     up_cell, down_cell = (row - 1, col), (row + 1, col)
                     right_cell, left_cell = (row, col + 1), (row, col - 1)
                     if self._valid_transition(
-                            symbolic_obs, state=(row, col), next_state=up_cell
+                        symbolic_obs, state=(row, col), next_state=up_cell
                     ):
                         move_directions.append(
                             f"MOVE-DIR pos-{col + 1}-{row + 1} pos-{up_cell[1] + 1}-{up_cell[0] + 1} dir-up"
                         )
                     if self._valid_transition(
-                            symbolic_obs, state=(row, col), next_state=down_cell
+                        symbolic_obs, state=(row, col), next_state=down_cell
                     ):
                         move_directions.append(
                             f"MOVE-DIR pos-{col + 1}-{row + 1} pos-{down_cell[1] + 1}-{down_cell[0] + 1} dir-down"
                         )
                     if self._valid_transition(
-                            symbolic_obs, state=(row, col), next_state=right_cell
+                        symbolic_obs, state=(row, col), next_state=right_cell
                     ):
                         move_directions.append(
                             f"MOVE-DIR pos-{col + 1}-{row + 1} pos-{right_cell[1] + 1}-{right_cell[0] + 1} dir-right"
                         )
                     if self._valid_transition(
-                            symbolic_obs, state=(row, col), next_state=left_cell
+                        symbolic_obs, state=(row, col), next_state=left_cell
                     ):
                         move_directions.append(
                             f"MOVE-DIR pos-{col + 1}-{row + 1} pos-{left_cell[1] + 1}-{left_cell[0] + 1} dir-left"
@@ -221,7 +229,7 @@ class PDDL:
 
         move_directions = np.unique(move_directions).tolist()
         init_state = (
-                goal + non_goal + move_directions + player_location + box_location + clear
+            goal + non_goal + move_directions + player_location + box_location + clear
         )
         return init_state
 
@@ -231,17 +239,17 @@ class PDDL:
     @staticmethod
     def _valid_transition(symbolic_obs, state, next_state):
         return not (  # check bounds of grid dimension
-                state[0] < 0
-                or state[1] < 0
-                or next_state[0] < 0
-                or next_state[1] < 0
-                or state[0] >= symbolic_obs.shape[0]
-                or state[1] >= symbolic_obs.shape[1]
-                or next_state[0] >= symbolic_obs.shape[0]
-                or next_state[1] >= symbolic_obs.shape[1]
-                # check for wall
-                or symbolic_obs[next_state[0], next_state[1]] == "wall"
-                or symbolic_obs[state[0], state[1]] == "wall"
+            state[0] < 0
+            or state[1] < 0
+            or next_state[0] < 0
+            or next_state[1] < 0
+            or state[0] >= symbolic_obs.shape[0]
+            or state[1] >= symbolic_obs.shape[1]
+            or next_state[0] >= symbolic_obs.shape[0]
+            or next_state[1] >= symbolic_obs.shape[1]
+            # check for wall
+            or symbolic_obs[next_state[0], next_state[1]] == "wall"
+            or symbolic_obs[state[0], state[1]] == "wall"
         )
 
     @property

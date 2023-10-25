@@ -14,32 +14,43 @@ def process_files(file_paths):
     transition_data = defaultdict(lambda: None)
     for file_path in tqdm(file_paths, desc=f"{id}"):
         file_path = os.path.join(dataset_dir, file_path)
-        if 'episode' in file_path:
-            with open(file_path, 'rb') as _file:
+        if "episode" in file_path:
+            with open(file_path, "rb") as _file:
                 episode = pickle.load(_file)
 
-                episode = {'observations': np.array(episode['observations']),
-                           'actions': np.array(episode['actions']).astype(np.int8),
-                           'rewards': np.array(episode['rewards']).astype(np.float32),
-                           'dones': np.array(episode['dones']),
-                           'timesteps': np.array(episode['timesteps']).astype(np.uint16),
-                           'symbolic_state': np.array(episode['symbolic_state']).astype(np.uint8),
-                           'returns_to_go': np.array(episode['returns_to_go']).astype(np.float32)}
+                episode = {
+                    "observations": np.array(episode["observations"]),
+                    "actions": np.array(episode["actions"]).astype(np.int8),
+                    "rewards": np.array(episode["rewards"]).astype(np.float32),
+                    "dones": np.array(episode["dones"]),
+                    "timesteps": np.array(episode["timesteps"]).astype(np.uint16),
+                    "symbolic_state": np.array(episode["symbolic_state"]).astype(
+                        np.uint8
+                    ),
+                    "returns_to_go": np.array(episode["returns_to_go"]).astype(
+                        np.float32
+                    ),
+                }
 
                 for k in episode.keys():
                     if transition_data[k] is None:
-                        if k in ['observations', 'symbolic_state']:
+                        if k in ["observations", "symbolic_state"]:
                             transition_data[k] = episode[k][:-1]
                             transition_data[f"next_{k}"] = episode[k][1:]
                         else:
                             transition_data[k] = episode[k]
                     else:
-                        if k in ['observations', 'symbolic_state']:
-                            transition_data[k] = np.concatenate((transition_data[k], episode[k][:-1]))
+                        if k in ["observations", "symbolic_state"]:
+                            transition_data[k] = np.concatenate(
+                                (transition_data[k], episode[k][:-1])
+                            )
                             transition_data[f"next_{k}"] = np.concatenate(
-                                (transition_data[f"next_{k}"], episode[k][1:]))
+                                (transition_data[f"next_{k}"], episode[k][1:])
+                            )
                         else:
-                            transition_data[k] = np.concatenate((transition_data[k], episode[k]))
+                            transition_data[k] = np.concatenate(
+                                (transition_data[k], episode[k])
+                            )
 
     return {k: v for k, v in transition_data.items()}
 
@@ -47,27 +58,31 @@ def process_files(file_paths):
 def save_transitions(dataset_dir):
     episode_files = os.listdir(dataset_dir)
     # episode_files = episode_files[:len(episode_files) // 2]
-    if 'random' in dataset_dir:
+    if "random" in dataset_dir:
         episode_files = episode_files[:100000]
     transition_data = defaultdict(lambda: None)
 
     max_processes = 10
     chunk_size = len(episode_files) // max_processes
-    episode_file_chunks = [(dataset_dir, id, episode_files[i:i + chunk_size])
-                           for id, i in enumerate(range(0, len(episode_files), chunk_size))]
+    episode_file_chunks = [
+        (dataset_dir, id, episode_files[i : i + chunk_size])
+        for id, i in enumerate(range(0, len(episode_files), chunk_size))
+    ]
     with Pool(max_processes) as p:
         for transition_data_chunk in p.map(process_files, episode_file_chunks):
             for k in transition_data_chunk.keys():
                 if transition_data[k] is None:
                     transition_data[k] = transition_data_chunk[k]
                 else:
-                    transition_data[k] = np.concatenate((transition_data[k], transition_data_chunk[k]))
+                    transition_data[k] = np.concatenate(
+                        (transition_data[k], transition_data_chunk[k])
+                    )
 
     transition_data = {k: v for k, v in transition_data.items()}
-    with open(os.path.join(dataset_dir, 'transitions.p'), 'wb') as transitions_file:
+    with open(os.path.join(dataset_dir, "transitions.p"), "wb") as transitions_file:
         pickle.dump(transition_data, transitions_file)
 
-    with open(os.path.join(dataset_dir, 'transitions.p'), 'rb') as transitions_file:
+    with open(os.path.join(dataset_dir, "transitions.p"), "rb") as transitions_file:
         pickle.load(transitions_file)
 
 
@@ -81,8 +96,7 @@ def get_args():
         help="job to be performed",
     )
     parser.add_argument(
-        "--dataset-dir",
-        default=os.path.join(Path.home(), ".sokoban-datasets")
+        "--dataset-dir", default=os.path.join(Path.home(), ".sokoban-datasets")
     )
 
     # env-args
@@ -112,10 +126,7 @@ def get_args():
         default="expert",
         type=str,
         help="max number steps for data collection",
-        choices=[
-            "expert",
-            "random"
-        ],
+        choices=["expert", "random"],
     )
     data_generation_args.add_argument(
         "--episode-start-idx",
@@ -136,10 +147,11 @@ def get_args():
     return args
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = get_args()
-    dataset_dir = os.path.join(args.dataset_dir, args.env_name,
-                               args.env_observation_mode, args.dataset_quality)
+    dataset_dir = os.path.join(
+        args.dataset_dir, args.env_name, args.env_observation_mode, args.dataset_quality
+    )
 
     os.makedirs(dataset_dir, exist_ok=True)
     save_transitions(dataset_dir)

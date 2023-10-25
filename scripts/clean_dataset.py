@@ -9,8 +9,8 @@ import argparse
 def generate_dataset_stats(episode_start_idx, max_episodes):
     removed_files = []
     missing_files = []
-    for env_name in ['gym_sokoban:Boxoban-Train-v0']:
-        for dataset_name in ['expert']:
+    for env_name in ["gym_sokoban:Boxoban-Train-v0"]:
+        for dataset_name in ["expert"]:
             print(env_name, dataset_name)
 
             try:
@@ -20,14 +20,16 @@ def generate_dataset_stats(episode_start_idx, max_episodes):
                     try:
                         file = episode_dataset.episode_files[file_i]
                         try:
-                            with open(file, 'rb') as _file:
+                            with open(file, "rb") as _file:
                                 _episode_info = pickle.load(_file)
                         except:
                             os.remove(file)
                             removed_files.append(file)
                     except:
                         missing_files.append(file_i)
-                    pbar.set_description(f"Removed Files: {len(removed_files)} | Missing Files: {len(missing_files)}")
+                    pbar.set_description(
+                        f"Removed Files: {len(removed_files)} | Missing Files: {len(missing_files)}"
+                    )
 
             except Exception as e:
                 print(e)
@@ -64,11 +66,13 @@ def get_args():
     return args
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = get_args()
-    removed_files, missing_files = generate_dataset_stats(args.episode_start_idx, args.max_episodes)
+    removed_files, missing_files = generate_dataset_stats(
+        args.episode_start_idx, args.max_episodes
+    )
     for x in removed_files:
         print(x)
-    print('----')
+    print("----")
     for x in missing_files:
         print(x)

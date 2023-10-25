@@ -32,16 +32,46 @@ def symbolic_state(obs):
     return np.array(_symbolic_obs)
 
 
-if __name__ == '__main__':
-
-    env = gym.make('gym_sokoban:Sokoban-small-v0')
+if __name__ == "__main__":
+    env = gym.make("gym_sokoban:Sokoban-small-v0")
     env.reset()
     sym_state = symbolic_state(env.render(mode="tiny_rgb_array"))
     for row in sym_state:
         print("".join(row))
 
-    solution = [1, 5, 5, 3, 3, 2, 6, 4, 8, 1, 1, 1, 4, 8, 8, 1,
-                1, 1, 3, 3, 3, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6]
+    solution = [
+        1,
+        5,
+        5,
+        3,
+        3,
+        2,
+        6,
+        4,
+        8,
+        1,
+        1,
+        1,
+        4,
+        8,
+        8,
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        2,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+    ]
     for action in solution:
         env.render()
         _, _, _, info = env.step(action)

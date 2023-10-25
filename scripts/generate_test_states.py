@@ -16,8 +16,7 @@ from sokoban_bazaar.dataset import get_dataset
 def get_args():
     parser = argparse.ArgumentParser("Combinatorial Tasks with Decision Transformers ")
     parser.add_argument(
-        "--dataset-dir",
-        default=os.path.join(Path.home(), ".sokoban-datasets")
+        "--dataset-dir", default=os.path.join(Path.home(), ".sokoban-datasets")
     )
 
     # env-args
@@ -43,36 +42,38 @@ def get_args():
 
 def __main():
     args = get_args()
-    episode_dataset, _ = get_dataset(args.env_name, 'expert')
+    episode_dataset, _ = get_dataset(args.env_name, "expert")
     train_states = dict()
     for file_idx, file in enumerate(tqdm(episode_dataset.episode_files)):
         try:
-            with open(file, 'rb') as data_file:
-                observations = pickle.load(data_file)['observations']
+            with open(file, "rb") as data_file:
+                observations = pickle.load(data_file)["observations"]
         except:
             os.remove(file)
         sym_state, info = symbolic_state(np.rollaxis(observations[0], 0, 3))
         _key = tuple(sym_state.flatten())
 
         if _key not in train_states:
-            train_states[_key] = {'state': sym_state,
-                                  'info': info,
-                                  'tiny_rgb_array': observations,
-                                  'file_paths': [file]}
+            train_states[_key] = {
+                "state": sym_state,
+                "info": info,
+                "tiny_rgb_array": observations,
+                "file_paths": [file],
+            }
         else:
             os.remove(file)
 
     # generate test-episodes
     test_episodes = 50
     env = gym.make(args.env_name)
-    test_states = pickle.load( open(os.path.join(args.dataset_dir,
-                           args.env_name,
-                           'test_states.p'), 'rb'))
+    test_states = pickle.load(
+        open(os.path.join(args.dataset_dir, args.env_name, "test_states.p"), "rb")
+    )
 
     for _key in test_states:
         if _key in train_states:
-            print('Present')
-    print('done')
+            print("Present")
+    print("done")
     # while len(test_states.keys()) < test_episodes:
     #     env.reset()
     #
@@ -106,5 +107,5 @@ def __main():
     #     pickle.dump(test_states, test_file)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     __main()

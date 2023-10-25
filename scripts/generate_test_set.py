@@ -16,8 +16,7 @@ from sokoban_bazaar.dataset import get_dataset
 def get_args():
     parser = argparse.ArgumentParser("Combinatorial Tasks with Decision Transformers ")
     parser.add_argument(
-        "--dataset-dir",
-        default=os.path.join(Path.home(), ".sokoban-datasets")
+        "--dataset-dir", default=os.path.join(Path.home(), ".sokoban-datasets")
     )
 
     # env-args
@@ -35,7 +34,7 @@ def get_args():
             "gym_sokoban:Sokoban-large-v0",
             "gym_sokoban:Sokoban-large-v1",
             "gym_sokoban:Sokoban-large-v2",
-            "gym_sokoban:Sokoban-huge-v1"
+            "gym_sokoban:Sokoban-huge-v1",
         ],
         help="name of the environment",
     )
@@ -47,7 +46,7 @@ def get_args():
 
 def __main():
     args = get_args()
-    episode_dataset, _ = get_dataset(args.env_name, 'expert')
+    episode_dataset, _ = get_dataset(args.env_name, "expert")
 
     # generate test-episodes
     test_episodes = 50
@@ -56,19 +55,21 @@ def __main():
     while len(test_states.keys()) < test_episodes:
         env.reset()
 
-        observation = env.render(mode='tiny_rgb_array')
+        observation = env.render(mode="tiny_rgb_array")
         sym_state, info = symbolic_state(observation)
         _key = tuple(sym_state.flatten())
         if _key not in test_states:
-            test_states[_key] = {'state': sym_state,
-                                 'info': info,
-                                 'tiny_rgb_array': observation}
+            test_states[_key] = {
+                "state": sym_state,
+                "info": info,
+                "tiny_rgb_array": observation,
+            }
 
-    with open(os.path.join(args.dataset_dir,
-                           args.env_name,
-                           'test_states.p'), 'wb') as test_file:
+    with open(
+        os.path.join(args.dataset_dir, args.env_name, "test_states.p"), "wb"
+    ) as test_file:
         pickle.dump(test_states, test_file)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     __main()

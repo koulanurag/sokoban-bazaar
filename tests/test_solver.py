@@ -5,7 +5,7 @@ import gym
 import random
 
 
-@pytest.mark.parametrize('env_name', ["gym_sokoban:Sokoban-small-v0"])
+@pytest.mark.parametrize("env_name", ["gym_sokoban:Sokoban-small-v0"])
 def test_solver(env_name):
     env = gym.make(env_name)
     env.reset()

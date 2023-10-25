@@ -6,5 +6,3 @@ register(
     entry_point="gym_sokoban.envs:SokobanEnv",
     kwargs={"dim_room": (5, 5), "max_steps": 200, "num_boxes": 2},
 )
-
-

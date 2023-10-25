@@ -19,8 +19,7 @@ import random
 def get_args():
     parser = argparse.ArgumentParser("Combinatorial Tasks with Decision Transformers ")
     parser.add_argument(
-        "--dataset-dir",
-        default=os.path.join(Path.home(), ".sokoban-datasets")
+        "--dataset-dir", default=os.path.join(Path.home(), ".sokoban-datasets")
     )
 
     # env-args
@@ -48,7 +47,7 @@ def __main():
     _domain_pddl_path = domain_pddl_path(args.env_name)
     for episode_idx in tqdm(range(1000)):
         env.reset(map_idx=episode_idx)
-        observation = env.render(mode='tiny_rgb_array')
+        observation = env.render(mode="tiny_rgb_array")
         sym_state, info = symbolic_state(observation)
         pddl = PDDL(
             sym_state,
@@ -58,23 +57,26 @@ def __main():
         )
         start_time = time.time()
         plan = pddl.search_plan()
-        time_taken = (time.time() - start_time)
+        time_taken = time.time() - start_time
 
-        test_states.append({'state': sym_state,
-                            'info': info,
-                            'tiny_rgb_array': observation,
-                            'plan': plan,
-                            'plan-time': time_taken,
-                            'map_idx': episode_idx})
+        test_states.append(
+            {
+                "state": sym_state,
+                "info": info,
+                "tiny_rgb_array": observation,
+                "plan": plan,
+                "plan-time": time_taken,
+                "map_idx": episode_idx,
+            }
+        )
 
-    test_states = sorted(test_states, key=lambda ele: ele['plan-time'])
-    os.makedirs(os.path.join(args.dataset_dir,
-                           args.env_name), exist_ok=True)
-    with open(os.path.join(args.dataset_dir,
-                           args.env_name,
-                           'test_states.p'), 'wb') as test_file:
+    test_states = sorted(test_states, key=lambda ele: ele["plan-time"])
+    os.makedirs(os.path.join(args.dataset_dir, args.env_name), exist_ok=True)
+    with open(
+        os.path.join(args.dataset_dir, args.env_name, "test_states.p"), "wb"
+    ) as test_file:
         pickle.dump(test_states, test_file)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     __main()
