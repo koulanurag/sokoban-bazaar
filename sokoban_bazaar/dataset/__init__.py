@@ -30,14 +30,14 @@ import numpy as np
 import torch
 
 
-def root_dir():
+def __root_dir():
     return os.environ.get(
         "SOKOBAN_DATASET_ROOT_PATH",
         default=os.path.join(Path.home(), ".sokoban-datasets"),
     )
 
 
-def _load_pickle_with_progress(
+def __load_pickle_with_progress(
     pickle_file, chunk_size=1024 * 1024 * 1024, desc=None
 ):  # Chunk size set to 1MB
     file_size = os.path.getsize(pickle_file)
@@ -63,9 +63,9 @@ def _load_pickle_with_progress(
                 exit(1)
 
 
-def load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024, desc=None):
+def _load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024, desc=None):
     loaded_data = b""
-    for chunk in _load_pickle_with_progress(pickle_file, chunk_size, desc):
+    for chunk in __load_pickle_with_progress(pickle_file, chunk_size, desc):
         loaded_data += chunk
     return pickle.loads(loaded_data)
 
@@ -82,13 +82,13 @@ def get_trajectories(env_name, dataset_name, dataset_size=None, chunk_size=1024*
         weights = []
         for sub_dataset_name in sub_dataset_names:
             _trajectories_path = os.path.join(
-                root_dir(),
+                __root_dir(),
                 env_name,
                 "tiny_rgb_array",
                 sub_dataset_name,
                 "trajectories.p",
             )
-            sub_dataset = load_pickle_with_progress(
+            sub_dataset = _load_pickle_with_progress(
                 _trajectories_path,
                 chunk_size=chunk_size,
                 desc=f"Loading Dataset {sub_dataset_name}",
