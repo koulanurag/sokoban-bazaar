@@ -39,7 +39,12 @@ setup(
     author_email="koulanurag@gmail.com",
     license="MIT License",
     packages=setuptools.find_packages(),
-    install_requires=[],
+    install_requires=[
+        "gym==0.21.0",
+        "pyperplan",
+        "torch>=2.0.0",
+        "gym-sokoban @ git+https://github.com/koulanurag/gym-sokoban@default#egg=gym-sokoban",
+    ],
     extras_require=extras,
     tests_require=extras["test"],
     python_requires=">=3.6, <3.12",
