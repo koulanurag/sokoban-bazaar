@@ -8,19 +8,19 @@ from collections import defaultdict
 
 _ENV_NAMES = [
     # "gym_sokoban:Sokoban-small-v0",
-    "gym_sokoban:Sokoban-small-v1",
-    "gym_sokoban:Sokoban-v2",
-    "Sokoban5x5-v0",
-    "gym_sokoban:Sokoban-large-v0",
-    "gym_sokoban:Sokoban-large-v1",
+    # "gym_sokoban:Sokoban-small-v1",
+    # "gym_sokoban:Sokoban-v2",
+    # "Sokoban5x5-v0",
+    # "gym_sokoban:Sokoban-large-v0",
+    # "gym_sokoban:Sokoban-large-v1",
     "gym_sokoban:Boxoban-Train-v0",
 ]
 _DATASET_NAMES = [
-    "random",
+#    "random",
     "expert",
     # 'medium',
     # 'medium-expert',
-    "expert-random",
+#    "expert-random",
 ]
 
 import os
@@ -86,7 +86,7 @@ def get_trajectories(env_name, dataset_name, dataset_size=None, chunk_size=1024*
                 env_name,
                 "tiny_rgb_array",
                 sub_dataset_name,
-                "transitions.p",
+                "trajectories.p",
             )
             sub_dataset = load_pickle_with_progress(
                 _trajectories_path,
