@@ -15,13 +15,13 @@ from sokoban_bazaar.dataset import SokobanCustomResetEnv
 def generate_search_trajectories(
     episode_start_idx, max_episodes, num_rollouts, max_rollout_steps
 ):
-    env_name = "gym_sokoban:Boxoban-Train"
+    env_name = "gym_sokoban:Boxoban-Train-v0"
     dataset_name = "expert"
     save_dir = os.path.join(
         root_path, env_name, "tiny_rgb_array", dataset_name, "branched-trajectories"
     )
     os.makedirs(save_dir, exist_ok=True)
-    episodes, _ = get_trajectories("gym_sokoban:Boxoban-Train-v0", "expert")
+    episodes, _ = get_trajectories(env_name, dataset_name)
     env = SokobanCustomResetEnv(reset=False)
     for episode_idx, episode in enumerate(
         episodes[episode_start_idx : episode_start_idx + max_episodes]
