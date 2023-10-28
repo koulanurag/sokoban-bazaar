@@ -1,17 +1,16 @@
 import pickle
 from pathlib import Path
 from sokoban_bazaar.dataset import get_trajectories
-from tqdm import tqdm
 import os
 import argparse
-import gym
-from sokoban_bazaar.utils import set_state
 from collections import defaultdict
 import copy
+
 root_path = os.environ.get(
     "SOKOBAN_DATASET_ROOT_PATH", default=os.path.join(Path.home(), ".sokoban-datasets")
 )
 from sokoban_bazaar.dataset import SokobanCustomResetEnv
+
 
 def generate_search_trajectories(
     episode_start_idx, max_episodes, num_rollouts, max_rollout_steps
@@ -23,16 +22,15 @@ def generate_search_trajectories(
     )
     os.makedirs(save_dir, exist_ok=True)
     episodes, _ = get_trajectories("gym_sokoban:Boxoban-Train-v0", "expert")
+    env = SokobanCustomResetEnv(reset=False)
     for episode_idx, episode in enumerate(
         episodes[episode_start_idx : episode_start_idx + max_episodes]
     ):
-        env = SokobanCustomResetEnv(reset=False)
         rollouts = defaultdict(lambda: [])
         for step_i, observation in enumerate(episode["observations"]):
             rollouts[step_i] = []
-            import pdb; pdb.set_trace()
             for rollout_i in range(num_rollouts):
-                env.reset(tiny_rgb_state=copy.deepcopy(observation).transpose(1,2,0))
+                env.reset(tiny_rgb_state=copy.deepcopy(observation).transpose(1, 2, 0))
                 rollouts[step_i].append(defaultdict(lambda: []))
                 for step in range(max_rollout_steps):
                     step_action = env.action_space.sample()
