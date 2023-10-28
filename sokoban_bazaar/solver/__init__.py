@@ -72,17 +72,20 @@ def symbolic_state(obs):
             info["box_mapping"][(row_i, col_i)] = (row_i, col_i)
 
             info["room_fixed"][row_i][col_i] = OBJECT_NAME_TO_IDX[_object_name]
-            if _object_name in [
-                "player_off_target",
-                "player_on_target",
-                "box_off_target",
-                "box_on_target",
-            ]:
+            if _object_name in ["player_off_target", "box_off_target"]:
                 info["room_fixed"][row_i][col_i] = OBJECT_NAME_TO_IDX["floor"]
+            if _object_name in ["player_on_target", "box_on_target"]:
+                info["room_fixed"][row_i][col_i] = OBJECT_NAME_TO_IDX["box_target"]
 
             info["room_state"][row_i][col_i] = OBJECT_NAME_TO_IDX[_object_name]
-            if _object_name in ["box_off_target"]:
+            if _object_name == "box_off_target":
                 info["room_state"][row_i][col_i] = OBJECT_NAME_TO_IDX["box_on_target"]
+            if _object_name == "box_on_target":
+                info["room_state"][row_i][col_i] = OBJECT_NAME_TO_IDX["box_off_target"]
+            if _object_name in ["player_on_target"]:
+                info["room_state"][row_i][col_i] = OBJECT_NAME_TO_IDX[
+                    "player_off_target"
+                ]
 
     return np.array(_symbolic_obs), info
 
