@@ -1,0 +1,51 @@
+description: Generate Sokoban Episodic Dataset
+target:
+  service: sing
+  name: msrresrchvc
+
+environment:
+  image: amlt-sing/pytorch-1.10.0-cuda11.4-a100
+  image_setup:
+    - pip3 install wandb --upgrade
+    - pip3 install pyglet --upgrade
+    - pip install 'setuptools<=66'
+    - pip3 install gym==0.21.0
+    - pip3 install gym-sokoban
+    - pip3 install pyperplan
+    - pip3 install transformers
+  setup:
+    - pip3 install scikit-learn --upgrade
+
+storage:
+  dt_sokoban:
+    storage_account_name: anuragkoul
+    container_name: dt-sokoban
+    is_output: true
+
+code:
+  local_dir: $CONFIG_DIR/..
+
+search:
+  job_template:
+    name: dt_sokoban_{experiment_name:s}_{auto:3s}
+    sku: 2C2
+    sla_tier: premium  # [basic, standard, premium]
+    execution_mode: basic  # [basic, managed]
+    priority: high  # [low, medium, high]
+    submit_args:
+      env:
+        { WANDB_API_KEY: $WANDB_API_KEY ,
+          SOKOBAN_DATASET_ROOT_PATH: "/mnt/dt_sokoban/datasets" }
+    command:
+      - pip install -e .
+      - cd scripts
+      - python generate_search_trajectories.py
+        --dataset-dir /mnt/dt_sokoban/datasets/
+        --max-episodes 1000
+        --episode-start-idx {episode_start_idx}
+  type: grid
+  max_trials: 25001
+  params:
+    - name: episode_start_idx
+      spec: discrete
+      values: range(0,1000,1000)
