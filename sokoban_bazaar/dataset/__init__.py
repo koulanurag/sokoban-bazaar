@@ -70,7 +70,7 @@ def _load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024, desc=
     return pickle.loads(loaded_data)
 
 
-def get_trajectories(env_name, dataset_name, dataset_size=None, chunk_size=1024**3):
+def get_trajectories(env_name, dataset_name, dataset_size=None, future_context=False, chunk_size=1024**3):
     if env_name not in _ENV_NAMES:
         raise ValueError()
     if dataset_name not in ["expert", "random", "expert-random"]:
@@ -81,24 +81,29 @@ def get_trajectories(env_name, dataset_name, dataset_size=None, chunk_size=1024*
         sub_dataset_names = dataset_name.split("-")
         weights = []
         for sub_dataset_name in sub_dataset_names:
-            _trajectories_path = os.path.join(
-                __root_dir(),
-                env_name,
-                "tiny_rgb_array",
-                sub_dataset_name,
-                "trajectories.p",
-            )
+
+            if not future_context:
+                _trajectories_path = os.path.join(
+                    __root_dir(),
+                    env_name,
+                    "tiny_rgb_array",
+                    sub_dataset_name,
+                    "trajectories.p",
+                )
+            else:
+                _trajectories_path = os.path.join(
+                    __root_dir(),
+                    env_name,
+                    "tiny_rgb_array",
+                    sub_dataset_name,
+                    "branched-trajectories",
+                    "trajectories.p",
+                )
             sub_dataset = _load_pickle_with_progress(
                 _trajectories_path,
                 chunk_size=chunk_size,
                 desc=f"Loading Dataset {sub_dataset_name}",
             )
-
-            # if dataset_size is None:
-            #     sub_dataset_size = len(sub_dataset) // len(sub_dataset_names)
-            # else:
-            #     sub_dataset_size = dataset_size // len(sub_dataset_names)
-            #
             sub_dataset_size = len(sub_dataset)
             trajectories += sub_dataset[:sub_dataset_size]
             weights += (
@@ -163,7 +168,7 @@ def get_test_envs(env_name):
         return get_boxban_test_envs(env_name)
     else:
         with open(
-            os.path.join(root_dir(), env_name, "test_states.p"), "rb"
+            os.path.join(__root_dir(), env_name, "test_states.p"), "rb"
         ) as test_files:
             test_states = pickle.load(test_files)
 
@@ -180,7 +185,7 @@ def get_test_envs(env_name):
 def get_boxban_test_envs(env_name):
     assert env_name in ["gym_sokoban:Boxoban-Train-v0"]
 
-    with open(os.path.join(root_dir(), env_name, "test_states.p"), "rb") as test_files:
+    with open(os.path.join(__root_dir(), env_name, "test_states.p"), "rb") as test_files:
         test_states = pickle.load(test_files)
 
     test_envs = []

@@ -17,8 +17,9 @@ def compress_search_trajectories():
 
     episodes = []
     for file_name in os.listdir(save_dir):
-        episode = pickle.load(open(os.path.join(save_dir, file_name), 'rb'))
-        episodes.append(episode)
+        if 'episode_' in file_name:
+            episode = pickle.load(open(os.path.join(save_dir, file_name), 'rb'))
+            episodes.append(episode)
 
     pickle.dump(episodes, open(os.path.join(save_dir, f"trajectories.p"), "wb"))
 
