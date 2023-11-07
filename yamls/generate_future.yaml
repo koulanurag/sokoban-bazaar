@@ -40,7 +40,6 @@ search:
       - pip install -e .
       - cd scripts
       - python generate_search_trajectories.py
-        --dataset-dir /mnt/dt_sokoban/datasets/
         --max-episodes 1000
         --episode-start-idx {episode_start_idx}
   type: grid
@@ -48,4 +47,4 @@ search:
   params:
     - name: episode_start_idx
       spec: discrete
-      values: range(0,1000,1000)
+      values: range(1000,50000,1000)
