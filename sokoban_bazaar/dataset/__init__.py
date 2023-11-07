@@ -70,7 +70,7 @@ def _load_pickle_with_progress(pickle_file, chunk_size=1024 * 1024 * 1024, desc=
     return pickle.loads(loaded_data)
 
 
-def get_trajectories(env_name, dataset_name, dataset_size=None, future_context=False, chunk_size=1024**3):
+def get_trajectories(env_name, dataset_name, dataset_size=None, future_context=False, chunk_size=1024**3, with_embedding=False):
     if env_name not in _ENV_NAMES:
         raise ValueError()
     if dataset_name not in ["expert", "random", "expert-random"]:
@@ -82,15 +82,7 @@ def get_trajectories(env_name, dataset_name, dataset_size=None, future_context=F
         weights = []
         for sub_dataset_name in sub_dataset_names:
 
-            if not future_context:
-                _trajectories_path = os.path.join(
-                    __root_dir(),
-                    env_name,
-                    "tiny_rgb_array",
-                    sub_dataset_name,
-                    "trajectories.p",
-                )
-            else:
+            if future_context and not with_embedding:
                 _trajectories_path = os.path.join(
                     __root_dir(),
                     env_name,
@@ -99,6 +91,24 @@ def get_trajectories(env_name, dataset_name, dataset_size=None, future_context=F
                     "branched-trajectories",
                     "trajectories.p",
                 )
+            elif with_embedding:
+                _trajectories_path = os.path.join(
+                    __root_dir(),
+                    env_name,
+                    "tiny_rgb_array",
+                    sub_dataset_name,
+                    "future-embedding",
+                    "trajectories.p",
+                )
+            else:
+                _trajectories_path = os.path.join(
+                    __root_dir(),
+                    env_name,
+                    "tiny_rgb_array",
+                    sub_dataset_name,
+                    "trajectories.p",
+                )
+
             sub_dataset = _load_pickle_with_progress(
                 _trajectories_path,
                 chunk_size=chunk_size,
